@@ -1,0 +1,156 @@
+﻿using MTG_Cards.Data;
+using MTG_Cards.Models;
+using MTG_Cards.DTOs;
+using MTG_Cards.Services.Mappers;
+using MTG_Cards.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.Security.Claims;
+using Microsoft.Net.Http.Headers;
+using Azure;
+
+namespace MTG_Cards.Repositories
+{
+	public class UserRepository : IUserRepository
+	{
+		private readonly DataContext _context;
+
+		public UserRepository(DataContext context)
+		{
+			_context = context;
+		}
+
+		public bool UserExists(string username)
+		{
+			return _context.Users.Any(u => u.Username == username);
+		}
+
+		public User? GetUserById(int id)
+		{
+			return _context.Users
+				.Include(u => u.CardsOwned)
+					.ThenInclude(co => co.CardCondition)
+					.ThenInclude(cd => cd.Card)
+					.ThenInclude(c => c.Edition)
+				.FirstOrDefault(u => u.Id == id);
+		}
+
+		public User? GetUserByUsername(string username) 
+		{
+			return _context.Users
+				.Include(u => u.CardsOwned)
+					.ThenInclude(co => co.CardCondition)
+					.ThenInclude(cd => cd.Card)
+					.ThenInclude(c => c.Edition)
+				.FirstOrDefault(u => u.Username == username);
+		}
+
+		public List<CardOwnedDTO> GetCardsOwned(string username)
+		{
+			var user = _context.Users
+				.Include(u => u.CardsOwned)
+					.ThenInclude(co => co.CardCondition)
+					.ThenInclude(cd => cd.Card)
+					.ThenInclude(c => c.Edition)
+				.FirstOrDefault(u => u.Username == username);
+			List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
+
+			if (user == null)
+				return cardsOwnedDTO;
+
+			foreach (CardOwned cardOwned in user.CardsOwned)
+			{
+				cardsOwnedDTO.Add(CardOwnedMapper.ToDTO(cardOwned));
+			}
+
+			return cardsOwnedDTO;
+		}
+
+		public bool LoginUser(UserLoginDTO userDTO)
+		{
+			User? user = _context.Users.FirstOrDefault(u => u.Username == userDTO.Username);
+			if (user == null) return false;
+
+			string hashedPassword = HashPassword(userDTO.Password, user.Salt);
+			if (hashedPassword != user.Password) return false;
+
+			return true;
+		}
+
+		public bool RegisterUser(UserLoginDTO userDTO)
+		{
+			var (hashedPassword, salt) = GenerateHashedPasswordAndSalt(userDTO.Password);
+			userDTO.Password = hashedPassword;
+			_context.Users.Add(UserMapper.ToModel(userDTO, salt));
+			return Save();
+		}
+
+		public bool AddUserCard(User user, CreateCardOwnedDTO cardToAdd)
+		{
+			var card = _context.Cards
+				.Include(c => c.Conditions)
+				.FirstOrDefault(c => c.Id == cardToAdd.CardId);
+			if (card == null) return false;
+
+			Condition condition = (Condition)Enum.Parse(typeof(Condition), cardToAdd.Condition);
+			var cardCondition = card.Conditions.Find(c => c.Condition == condition);
+			if (cardCondition == null) return false;
+
+			user.CardsOwned.Add(CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user));
+			return Save();
+		}
+
+		public bool UpdateUserCard(User user, int id, UpdateCardOwnedDTO cardToUpdate)
+		{
+			var cardOwned = _context.CardsOwned.Find(id);
+			if (cardOwned == null || cardOwned.User != user) return false;
+			
+			cardOwned.Quantity = cardToUpdate.Quantity;
+			return Save();
+		}
+
+		public bool DeleteUserCard(User user, int id)
+		{
+			var cardOwned = _context.CardsOwned.Include(co => co.User).FirstOrDefault(co => co.Id == id);
+			if ( cardOwned == null) return false;
+			else if (cardOwned.User != user) return false;
+
+			_context.CardsOwned.Remove(cardOwned);
+			return Save();
+		}
+
+		public bool Save()
+		{
+			var saved = _context.SaveChanges();
+			return saved > 0 ? true : false;
+		}
+
+		private (string hashedPassword, byte[] salt) GenerateHashedPasswordAndSalt(string password)
+		{
+			byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
+			string hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+					password: password,
+					salt: salt,
+					prf: KeyDerivationPrf.HMACSHA256,
+					iterationCount: 10000,
+					numBytesRequested: 256 / 8
+					));
+			return (hashedPassword, salt);
+		}
+
+		private string HashPassword(string password, string salt)
+		{
+			byte[] saltBytes = Convert.FromBase64String(salt);
+			string hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+					password: password,
+					salt: saltBytes,
+					prf: KeyDerivationPrf.HMACSHA256,
+					iterationCount: 10000,
+					numBytesRequested: 256 / 8
+					));
+			return hashedPassword;
+		}
+	}
+}
