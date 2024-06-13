@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using MTG_Cards.Data;
 using MTG_Cards.DTOs;
 using MTG_Cards.Interfaces;
@@ -9,20 +10,12 @@ namespace MTG_Cards.Repositories
     public class EditionRepository : IEditionRepository
     {
         private readonly DataContext _context;
+        private readonly IDistributedCache _distributedCache;
 
-        public EditionRepository(DataContext context)
+        public EditionRepository(DataContext context, IDistributedCache distributedCache)
         {
             _context = context;
-        }
-
-        public Boolean EditionExists(int id)
-        {
-            return _context.Editions.Any(e => e.Id == id);
-        }
-
-        public Boolean EditionExists(string code)
-        {
-            return _context.Editions.Any(e => e.Code == code);
+            _distributedCache = distributedCache;
         }
 
         public ICollection<EditionDropdownDTO> GetEditions()
@@ -47,33 +40,33 @@ namespace MTG_Cards.Repositories
             return edition;
         }
 
-        public Edition GetEditionByName(string name)
+        public Edition? GetEditionByName(string name)
         {
             return _context.Editions.FirstOrDefault(e => e.Name == name);
         }
 
-        public bool CreateEdition(EditionDropdownDTO request)
-        {
-            var edition = new Edition 
-            { 
-                Name = request.Name,
-                Code = request.Code,
-				Cards = new List<Card>()
-			};
+   //     public bool CreateEdition(EditionDropdownDTO request)
+   //     {
+   //         var edition = new Edition 
+   //         { 
+   //             Name = request.Name,
+   //             Code = request.Code,
+			//	Cards = new List<Card>()
+			//};
 
-            _context.Editions.Add(edition);
-            return Save();
-        }
+   //         _context.Editions.Add(edition);
+   //         return Save();
+   //     }
 
-        public bool RemoveEdition(int id)
-        {
-            var edition = _context.Editions.FirstOrDefault(e => e.Id==id);
-            if (edition == null)
-                return false;
+   //     public bool RemoveEdition(int id)
+   //     {
+   //         var edition = _context.Editions.FirstOrDefault(e => e.Id==id);
+   //         if (edition == null)
+   //             return false;
             
-            _context.Editions.Remove(edition);
-            return Save();
-        }
+   //         _context.Editions.Remove(edition);
+   //         return Save();
+   //     }
 
         public bool Save()
         {

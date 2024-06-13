@@ -22,6 +22,12 @@ builder.Services.AddAuthentication("auth").AddCookie("auth", options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    var connection = builder.Configuration.GetConnectionString("Redis");
+    options.Configuration = connection;
+});
+
 builder.Services.AddScoped<ICardRepository, CardRepository>();
 builder.Services.AddScoped<IEditionRepository, EditionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();

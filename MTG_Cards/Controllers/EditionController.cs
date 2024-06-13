@@ -26,20 +26,21 @@ namespace MTG_Cards.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEditionById(int id)
         {
-            if (!_repository.EditionExists(id))
-                return NotFound("No edition with the id: " + id);
-
             var edition = await _repository.GetEditionById(id);
-            EditionDTO editionDTO = EditionMapper.ToDTO(edition);
+			if (edition == null)
+				return NotFound("No edition with the id: " + id);
+
+			EditionDTO editionDTO = EditionMapper.ToDTO(edition);
 			return Ok(editionDTO);
         }
 
         [HttpGet("search")]
         public IActionResult GetEditionByName(string name)
         {
-            if (!_repository.EditionExists(name))
+            var edition = _repository.GetEditionByName(name);
+            if (edition == null) 
                 return NotFound("No edition with the name: " + name);
-            return Ok(_repository.GetEditionByName(name));
+			return Ok(edition);
         }
     }
 }
