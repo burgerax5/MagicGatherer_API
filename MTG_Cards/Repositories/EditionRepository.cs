@@ -4,6 +4,8 @@ using MTG_Cards.Data;
 using MTG_Cards.DTOs;
 using MTG_Cards.Interfaces;
 using MTG_Cards.Models;
+using MTG_Cards.Services.Mappers;
+using Newtonsoft.Json;
 
 namespace MTG_Cards.Repositories
 {
@@ -30,48 +32,43 @@ namespace MTG_Cards.Repositories
 			return editionDTOs;
         }
 
-        public async Task<Edition?> GetEditionById(int id)
+        public async Task<EditionDTO?> GetEditionById(int id)
         {
-            var edition = await _context.Editions
-                .Include(e => e.Cards)
-                    .ThenInclude(c => c.Conditions)
-                .FirstOrDefaultAsync(e => e.Id == id);
+            string key = $"edition-{id}";
+            CancellationToken cancellationToken = default;
 
-            return edition;
+            string? cachedEdition = await _distributedCache.GetStringAsync(
+                key,
+                cancellationToken);
+            EditionDTO? editionDTO;
+
+            // Cache Miss
+            if (string.IsNullOrEmpty(cachedEdition))
+            {
+				var edition = await _context.Editions
+				        .Include(e => e.Cards)
+					        .ThenInclude(c => c.Conditions)
+				        .FirstOrDefaultAsync(e => e.Id == id);
+
+                if (edition == null) return null;
+                editionDTO = EditionMapper.ToDTO(edition);
+
+				await _distributedCache.SetStringAsync(
+                    key, 
+                    JsonConvert.SerializeObject(editionDTO),
+                    cancellationToken);
+
+				return editionDTO;
+			}
+
+            // Cache Hit
+            editionDTO = JsonConvert.DeserializeObject<EditionDTO>(cachedEdition);
+            return editionDTO;
         }
 
         public Edition? GetEditionByName(string name)
         {
             return _context.Editions.FirstOrDefault(e => e.Name == name);
-        }
-
-   //     public bool CreateEdition(EditionDropdownDTO request)
-   //     {
-   //         var edition = new Edition 
-   //         { 
-   //             Name = request.Name,
-   //             Code = request.Code,
-			//	Cards = new List<Card>()
-			//};
-
-   //         _context.Editions.Add(edition);
-   //         return Save();
-   //     }
-
-   //     public bool RemoveEdition(int id)
-   //     {
-   //         var edition = _context.Editions.FirstOrDefault(e => e.Id==id);
-   //         if (edition == null)
-   //             return false;
-            
-   //         _context.Editions.Remove(edition);
-   //         return Save();
-   //     }
-
-        public bool Save()
-        {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
         }
     }
 }

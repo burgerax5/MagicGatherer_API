@@ -26,11 +26,10 @@ namespace MTG_Cards.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEditionById(int id)
         {
-            var edition = await _repository.GetEditionById(id);
-			if (edition == null)
+            var editionDTO = await _repository.GetEditionById(id);
+			if (editionDTO == null)
 				return NotFound("No edition with the id: " + id);
 
-			EditionDTO editionDTO = EditionMapper.ToDTO(edition);
 			return Ok(editionDTO);
         }
 
