@@ -20,16 +20,37 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public ICollection<EditionDropdownDTO> GetEditions()
+        public async Task<ICollection<EditionDropdownDTO>> GetEditionNames()
         {
-            ICollection<Edition> editions = _context.Editions.ToList();
-            ICollection<EditionDropdownDTO> editionDTOs = new List<EditionDropdownDTO>();
-            foreach (Edition edition in editions)
-            {
-                editionDTOs.Add(new EditionDropdownDTO(edition.Name, edition.Code));
-            }
+            string key = "edition_names";
+            CancellationToken cancellationToken = default;
 
-			return editionDTOs;
+            string? cachedEditions = await _distributedCache.GetStringAsync(
+                key,
+                cancellationToken);
+
+            if (string.IsNullOrEmpty(cachedEditions)) 
+            {
+				ICollection<Edition> editions = _context.Editions.ToList();
+				ICollection<EditionDropdownDTO> editionDTOs = new List<EditionDropdownDTO>();
+				foreach (Edition edition in editions)
+				{
+					editionDTOs.Add(new EditionDropdownDTO(edition.Name, edition.Code));
+				}
+
+                await _distributedCache.SetStringAsync(
+                    key,
+                    JsonConvert.SerializeObject(editionDTOs),
+                    cancellationToken
+                    );
+
+                return editionDTOs;
+			}
+
+            var deserializedEditionDTOs = JsonConvert.DeserializeObject<ICollection<EditionDropdownDTO>>(cachedEditions);
+            if (deserializedEditionDTOs == null) return [];
+
+			return deserializedEditionDTOs;
         }
 
         public async Task<EditionDTO?> GetEditionById(int id)

@@ -5,7 +5,7 @@ namespace MTG_Cards.Interfaces
 {
     public interface IEditionRepository
     {
-        ICollection<EditionDropdownDTO> GetEditions();
+        Task<ICollection<EditionDropdownDTO>> GetEditionNames();
         Task<EditionDTO?> GetEditionById(int id);
         Edition? GetEditionByName(string name);
     }

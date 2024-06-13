@@ -18,9 +18,9 @@ namespace MTG_Cards.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetEditions()
+        public async Task<IActionResult> GetEditionNames()
         {
-            return Ok(_repository.GetEditions());
+            return Ok(await _repository.GetEditionNames());
         }
 
         [HttpGet("{id}")]
