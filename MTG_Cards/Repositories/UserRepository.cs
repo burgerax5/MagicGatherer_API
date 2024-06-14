@@ -10,16 +10,20 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System.Security.Claims;
 using Microsoft.Net.Http.Headers;
 using Azure;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 
 namespace MTG_Cards.Repositories
 {
 	public class UserRepository : IUserRepository
 	{
 		private readonly DataContext _context;
+		private readonly IDistributedCache _distributedCache;
 
-		public UserRepository(DataContext context)
+		public UserRepository(DataContext context, IDistributedCache distributedCache)
 		{
 			_context = context;
+			_distributedCache = distributedCache;
 		}
 
 		public bool UserExists(string username)
@@ -47,25 +51,41 @@ namespace MTG_Cards.Repositories
 				.FirstOrDefault(u => u.Username == username);
 		}
 
-		public List<CardOwnedDTO> GetCardsOwned(string username)
+		public async Task<List<CardOwnedDTO>> GetCardsOwned(string username)
 		{
-			var user = _context.Users
-				.Include(u => u.CardsOwned)
-					.ThenInclude(co => co.CardCondition)
-					.ThenInclude(cd => cd.Card)
-					.ThenInclude(c => c.Edition)
-				.FirstOrDefault(u => u.Username == username);
-			List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
+			string key = $"user-{username.ToLower()}";
+			CancellationToken cancellationToken = default;
 
-			if (user == null)
-				return cardsOwnedDTO;
+			string? cachedCards = await _distributedCache.GetStringAsync(
+				key,
+				cancellationToken);
 
-			foreach (CardOwned cardOwned in user.CardsOwned)
+			if (string.IsNullOrEmpty(cachedCards))
 			{
-				cardsOwnedDTO.Add(CardOwnedMapper.ToDTO(cardOwned));
+				var user = _context.Users
+								.Include(u => u.CardsOwned)
+									.ThenInclude(co => co.CardCondition)
+									.ThenInclude(cd => cd.Card)
+									.ThenInclude(c => c.Edition)
+								.FirstOrDefault(u => u.Username == username);
+				List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
+
+				if (user == null) return cardsOwnedDTO;
+
+				foreach (CardOwned cardOwned in user.CardsOwned)
+					cardsOwnedDTO.Add(CardOwnedMapper.ToDTO(cardOwned));
+
+				await _distributedCache.SetStringAsync(
+					key,
+					JsonConvert.SerializeObject(cardsOwnedDTO),
+					cancellationToken);
+
+				return cardsOwnedDTO;
 			}
 
-			return cardsOwnedDTO;
+			var deserializedCards = JsonConvert.DeserializeObject<List<CardOwnedDTO>>(cachedCards);
+			if (deserializedCards == null) deserializedCards = [];
+			return deserializedCards;
 		}
 
 		public bool LoginUser(UserLoginDTO userDTO)
@@ -87,19 +107,41 @@ namespace MTG_Cards.Repositories
 			return Save();
 		}
 
-		public bool AddUserCard(User user, CreateCardOwnedDTO cardToAdd)
+		public async Task<bool> AddUserCard(User user, CreateCardOwnedDTO cardToAdd)
 		{
-			var card = _context.Cards
+			string key = $"user-{user.Username.ToLower()}";
+			CancellationToken cancellationToken = default;
+
+			string? cachedCards = await _distributedCache.GetStringAsync(
+				key,
+				cancellationToken);
+
+			// Make sure card with provided id exists
+			var card = await _context.Cards
 				.Include(c => c.Conditions)
-				.FirstOrDefault(c => c.Id == cardToAdd.CardId);
+				.FirstOrDefaultAsync(c => c.Id == cardToAdd.CardId);
 			if (card == null) return false;
 
+			// Retrieve the specified condition of the card
 			Condition condition = (Condition)Enum.Parse(typeof(Condition), cardToAdd.Condition);
-			var cardCondition = card.Conditions.Find(c => c.Condition == condition);
+			var cardCondition = card.Conditions.FirstOrDefault(c => c.Condition == condition);
 			if (cardCondition == null) return false;
 
+			// Make sure the user doesn't already have this card in this condition
+			var hasCardCondition = await _context.CardsOwned
+				.AnyAsync(c => c.UserId == user.Id && c.CardCondition.Condition == condition);
+			if (hasCardCondition) return false;
+
 			user.CardsOwned.Add(CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user));
-			return Save();
+
+			// After adding the card, update cache if it exists
+			if (!string.IsNullOrEmpty(cachedCards))
+			{
+				await _distributedCache.RemoveAsync(key, cancellationToken);
+				await this.GetCardsOwned(user.Username);
+			}
+
+			return await SaveAsync();
 		}
 
 		public bool UpdateUserCard(User user, int id, UpdateCardOwnedDTO cardToUpdate)
@@ -124,7 +166,13 @@ namespace MTG_Cards.Repositories
 		public bool Save()
 		{
 			var saved = _context.SaveChanges();
-			return saved > 0 ? true : false;
+			return saved > 0;
+		}
+
+		public async Task<bool> SaveAsync()
+		{
+			var saved = await _context.SaveChangesAsync();
+			return saved > 0;
 		}
 
 		private (string hashedPassword, byte[] salt) GenerateHashedPasswordAndSalt(string password)

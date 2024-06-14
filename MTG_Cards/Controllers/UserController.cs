@@ -18,11 +18,11 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpGet("cards/{username}")]
-		public IActionResult GetUserCards(string username)
+		public async Task<IActionResult> GetUserCards(string username)
 		{
 			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie) && authCookie.Split('.')[0] == username)
 			{
-				List<CardOwnedDTO> cardsOwned = _repository.GetCardsOwned(username);
+				List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
 				return Ok(cardsOwned);
 			}
 
@@ -30,13 +30,13 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpPost("cards")]
-		public IActionResult AddCardToUser([FromBody] CreateCardOwnedDTO cardToAdd)
+		public async Task<IActionResult> AddCardToUser([FromBody] CreateCardOwnedDTO cardToAdd)
 		{
 			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie))
 			{
 				var username = authCookie.Split('.')[0];
 				var user = _repository.GetUserByUsername(username);
-				var isSuccess = _repository.AddUserCard(user, cardToAdd);
+				var isSuccess = await _repository.AddUserCard(user, cardToAdd);
 				if (isSuccess) return Ok("Successfully added cards to collection");
 				return BadRequest("Something went wrong while trying to add card to collection");
 			}

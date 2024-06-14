@@ -8,12 +8,13 @@ namespace MTG_Cards.Interfaces
 		bool UserExists(string username);
 		User? GetUserById(int id);
 		User? GetUserByUsername(string username);
-		List<CardOwnedDTO> GetCardsOwned(string username);
+		Task<List<CardOwnedDTO>> GetCardsOwned(string username);
 		bool LoginUser(UserLoginDTO user);
 		bool RegisterUser(UserLoginDTO user);
-		bool AddUserCard(User user, CreateCardOwnedDTO card);
+		Task<bool> AddUserCard(User user, CreateCardOwnedDTO card);
 		bool UpdateUserCard(User user, int id, UpdateCardOwnedDTO updatedCardDetails);
 		bool DeleteUserCard(User user, int id);
 		bool Save();
+		Task<bool> SaveAsync();
 	}
 }
