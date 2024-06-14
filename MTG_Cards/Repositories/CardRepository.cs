@@ -21,11 +21,6 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public bool CardExists(int id)
-        {
-            return _context.Cards.Any(c => c.Id == id);
-        }
-
         public async Task<ICollection<CardDTO>> GetCards(int page)
         {
             string key = $"all_cards_page_{page}";
@@ -107,56 +102,5 @@ namespace MTG_Cards.Repositories
             var deserializedCards = JsonConvert.DeserializeObject<ICollection<CardDTO>>(cachedCards);
             return deserializedCards;
         }
-
-        public async Task<bool> CreateCards(string editionName, ICollection<CardDTO> cards)
-        {
-			//Check if the edition already exists in the database
-			var existingEdition = await _context.Editions.FirstOrDefaultAsync(e => e.Name == editionName);
-
-            if (existingEdition == null)
-                return false;
-
-			foreach (CardDTO card in cards)
-            {
-                await _context.Cards.AddAsync(CardMapper.ToModel(existingEdition, card));
-            }
-
-            return await SaveAsync();
-        }
-
-        public bool CreateCard(string editionName, Card card)
-        {
-            //Check if the edition already exists in the database
-            var existingEdition = _context.Editions.FirstOrDefault(e => e.Name == editionName);
-
-            if (existingEdition == null)
-                return false;
-
-            card.Edition = existingEdition;
-            _context.Cards.Add(card);
-            return Save();
-        }
-
-        public bool RemoveCard(Card card)
-        {
-            _context.Cards.Remove(card);
-            return Save();
-        }
-
-        public bool Save()
-        {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
-        }
-
-        public async Task<bool> SaveAsync()
-        {
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        //public void UpdateCard(intCard card)
-        //{
-
-        //}
     }
 }

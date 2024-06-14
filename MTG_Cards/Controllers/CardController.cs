@@ -13,12 +13,9 @@ namespace MTG_Cards.Controllers
     public class CardController : ControllerBase
     {
         private readonly ICardRepository _repository;
-        private readonly IEditionRepository _editionRepository;
-        public CardController(ICardRepository repository, IEditionRepository editionRepository, IScryfallAPI scryfallAPI)
+        public CardController(ICardRepository repository)
         {
             _repository = repository;
-            _editionRepository = editionRepository;
-
 		}
 
         [HttpGet]
@@ -50,38 +47,5 @@ namespace MTG_Cards.Controllers
 
 			return Ok(cards);
         }
-
-   //     [HttpPost]
-   //     public IActionResult CreateCard([FromBody] CardCreateDTO request)
-   //     {
-   //         Edition edition = _editionRepository.GetEditionByName(request.EditionName);
-
-   //         var newCard = new Card
-   //         {
-   //             Edition = edition,
-   //             Name = request.Name,
-   //             ImageURL = request.ImageURL,
-   //         };
-
-			//foreach (CardConditionDTO condition in request.CardConditions)
-   //         {
-   //             CardCondition cardCondition = new CardCondition
-   //             {
-   //                 Condition = (Condition)Enum.Parse(typeof(Condition), condition.Condition),
-   //                 Price = condition.Price,
-   //                 Quantity = condition.Quantity,
-   //             };
-
-   //             if (newCard.Conditions == null)
-   //                 newCard.Conditions = new List<CardCondition>();
-
-   //             newCard.Conditions.Add(cardCondition);
-   //         }
-
-
-			//if (_repository.CreateCard(request.EditionName, newCard))
-   //             return Created("/" + newCard.Id, "Added the card: " + newCard.Name);
-   //         return BadRequest("No edition by the name: " + request.EditionName);
-   //     }
     }
 }
