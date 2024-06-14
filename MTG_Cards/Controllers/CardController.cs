@@ -22,10 +22,10 @@ namespace MTG_Cards.Controllers
 		}
 
         [HttpGet]
-        public IActionResult GetCards([FromQuery] int page=1) // 50 cards per page
+        public async Task<IActionResult> GetCards([FromQuery] int page=1) // 50 cards per page
         {
             if (page <= 0) return BadRequest("Invalid page");
-            return Ok(_repository.GetCards(page-1));
+            return Ok(await _repository.GetCards(page-1));
         }
 
         [HttpGet("{id}")]
@@ -41,15 +41,14 @@ namespace MTG_Cards.Controllers
         }
 
         [HttpGet("search")]
-        public IActionResult GetCardByName([FromQuery] string name)
+        public async Task<IActionResult> GetCardsByName([FromQuery] string name)
         {
-            Card card = _repository.GetCardByName(name);
+            ICollection<CardDTO> cards = await _repository.GetCardsByName(name);
 
-            if (card == null)
+            if (cards.Count == 0)
                 return NotFound("No card with the name: " + name);
 
-			CardDTO cardDTO = CardMapper.ToDTO(card);
-			return Ok(cardDTO);
+			return Ok(cards);
         }
 
    //     [HttpPost]
