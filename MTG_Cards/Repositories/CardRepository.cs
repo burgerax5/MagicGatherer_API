@@ -57,14 +57,35 @@ namespace MTG_Cards.Repositories
             return JsonConvert.DeserializeObject<ICollection<CardDTO>>(cachedCards);
         }
 
-        public Card GetCardById(int id)
+        public async Task<CardDTO?> GetCardById(int id)
         {
-            var card = _context.Cards
-                .Include(c => c.Edition)
-                .Include(c => c.Conditions)
-                .FirstOrDefault(c => c.Id == id);
+            string key = $"cards-{id}";
+			CancellationToken cancellationToken = default;
 
-            return card;
+			string? cachedCard = await _distributedCache.GetStringAsync(
+				key,
+				cancellationToken);
+
+            if (string.IsNullOrEmpty(cachedCard))
+            {
+				var card = await _context.Cards
+				        .Include(c => c.Edition)
+				        .Include(c => c.Conditions)
+				        .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (card == null) return null;
+
+                var cardDTO = CardMapper.ToDTO(card);
+                await _distributedCache.SetStringAsync(
+                    key,
+                    JsonConvert.SerializeObject(cardDTO),
+                    cancellationToken);
+
+                return cardDTO;
+			}
+
+			var deserializedCard = JsonConvert.DeserializeObject<CardDTO>(cachedCard);
+            return deserializedCard;
         }
 
         public async Task<ICollection<CardDTO>> GetCardsByName(string name)
