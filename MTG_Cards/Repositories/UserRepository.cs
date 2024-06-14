@@ -148,10 +148,26 @@ namespace MTG_Cards.Repositories
 
 		public async Task<bool> UpdateUserCard(User user, int id, UpdateCardOwnedDTO cardToUpdate)
 		{
+			string key = $"user-{user.Username.ToLower()}";
+			CancellationToken cancellationToken = default;
+
+			string? cachedCards = await _distributedCache.GetStringAsync(
+				key,
+				cancellationToken);
+
+			// Make sure card with provided id exists
 			var cardOwned = _context.CardsOwned.Find(id);
 			if (cardOwned == null || cardOwned.User != user) return false;
 			
 			cardOwned.Quantity = cardToUpdate.Quantity;
+
+			// After updating the card in user's collection, update cache
+			if (!string.IsNullOrEmpty(cachedCards))
+			{
+				await _distributedCache.RemoveAsync(key, cancellationToken);
+				await this.GetCardsOwned(user.Username);
+			}
+
 			return await SaveAsync();
 		}
 
