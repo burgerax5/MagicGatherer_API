@@ -12,8 +12,8 @@ namespace MTG_Cards.Interfaces
 		bool LoginUser(UserLoginDTO user);
 		bool RegisterUser(UserLoginDTO user);
 		Task<bool> AddUserCard(User user, CreateCardOwnedDTO card);
-		bool UpdateUserCard(User user, int id, UpdateCardOwnedDTO updatedCardDetails);
-		bool DeleteUserCard(User user, int id);
+		Task<bool> UpdateUserCard(User user, int id, UpdateCardOwnedDTO updatedCardDetails);
+		Task<bool> DeleteUserCard(User user, int id);
 		bool Save();
 		Task<bool> SaveAsync();
 	}

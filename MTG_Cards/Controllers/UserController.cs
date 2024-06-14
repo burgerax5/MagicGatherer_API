@@ -45,13 +45,13 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpPut("cards/{id}")]
-		public IActionResult UpdateUserCard(int id, [FromBody] UpdateCardOwnedDTO updatedCardDetails)
+		public async Task<IActionResult> UpdateUserCard(int id, [FromBody] UpdateCardOwnedDTO updatedCardDetails)
 		{
 			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie))
 			{
 				var username = authCookie.Split('.')[0];
 				var user = _repository.GetUserByUsername(username);
-				var isSuccess = _repository.UpdateUserCard(user, id, updatedCardDetails);
+				var isSuccess = await _repository.UpdateUserCard(user, id, updatedCardDetails);
 				if (isSuccess) return Ok("Successfully updated card in collection");
 				return BadRequest("Something went wrong while trying to update card in collection");
 			}
@@ -60,13 +60,13 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpDelete("cards/{id}")]
-		public IActionResult DeleteUserCard(int id)
+		public async Task<IActionResult> DeleteUserCard(int id)
 		{
 			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie))
 			{
 				var username = authCookie.Split('.')[0];
 				var user = _repository.GetUserByUsername(username);
-				var isSuccess = _repository.DeleteUserCard(user, id);
+				var isSuccess = await _repository.DeleteUserCard(user, id);
 				if (isSuccess) return Ok("Successfully removed card from collection");
 				return BadRequest("Card is not in your collection");
 			}

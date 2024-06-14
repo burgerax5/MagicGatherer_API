@@ -12,6 +12,8 @@ using Microsoft.Net.Http.Headers;
 using Azure;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Threading;
 
 namespace MTG_Cards.Repositories
 {
@@ -144,23 +146,37 @@ namespace MTG_Cards.Repositories
 			return await SaveAsync();
 		}
 
-		public bool UpdateUserCard(User user, int id, UpdateCardOwnedDTO cardToUpdate)
+		public async Task<bool> UpdateUserCard(User user, int id, UpdateCardOwnedDTO cardToUpdate)
 		{
 			var cardOwned = _context.CardsOwned.Find(id);
 			if (cardOwned == null || cardOwned.User != user) return false;
 			
 			cardOwned.Quantity = cardToUpdate.Quantity;
-			return Save();
+			return await SaveAsync();
 		}
 
-		public bool DeleteUserCard(User user, int id)
+		public async Task<bool> DeleteUserCard(User user, int id)
 		{
+			string key = $"user-{user.Username.ToLower()}";
+			CancellationToken cancellationToken = default;
+
+			string? cachedCards = await _distributedCache.GetStringAsync(
+				key,
+				cancellationToken);
+
 			var cardOwned = _context.CardsOwned.Include(co => co.User).FirstOrDefault(co => co.Id == id);
 			if ( cardOwned == null) return false;
 			else if (cardOwned.User != user) return false;
 
 			_context.CardsOwned.Remove(cardOwned);
-			return Save();
+
+			// After removing the card, update cache if it exists
+			if (!string.IsNullOrEmpty(cachedCards))
+			{
+				await _distributedCache.RemoveAsync(key, cancellationToken);
+			}
+
+			return await SaveAsync();
 		}
 
 		public bool Save()
