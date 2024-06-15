@@ -140,7 +140,6 @@ namespace MTG_Cards.Repositories
 			if (!string.IsNullOrEmpty(cachedCards))
 			{
 				await _distributedCache.RemoveAsync(key, cancellationToken);
-				await this.GetCardsOwned(user.Username);
 			}
 
 			return await SaveAsync();
@@ -165,7 +164,6 @@ namespace MTG_Cards.Repositories
 			if (!string.IsNullOrEmpty(cachedCards))
 			{
 				await _distributedCache.RemoveAsync(key, cancellationToken);
-				await this.GetCardsOwned(user.Username);
 			}
 
 			return await SaveAsync();
