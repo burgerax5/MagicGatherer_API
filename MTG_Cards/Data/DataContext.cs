@@ -10,11 +10,11 @@ namespace MTG_Cards.Data
             
         }
 
-        public DbSet<Card> Cards { get; set; }
-        public DbSet<Edition> Editions { get; set; }
-        public DbSet<CardCondition> CardConditions { get; set; }
-        public DbSet<CardOwned> CardsOwned { get; set; }
-        public DbSet<User> Users { get; set; }
+        public virtual DbSet<Card> Cards { get; set; }
+        public virtual DbSet<Edition> Editions { get; set; }
+        public virtual DbSet<CardCondition> CardConditions { get; set; }
+        public virtual DbSet<CardOwned> CardsOwned { get; set; }
+        public virtual DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

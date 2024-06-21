@@ -136,7 +136,7 @@ namespace MTG_Cards.Repositories
 
 			user.CardsOwned.Add(CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user));
 
-			// After adding the card, update cache if it exists
+			// After adding the card, reset cache if it exists
 			if (!string.IsNullOrEmpty(cachedCards))
 			{
 				await _distributedCache.RemoveAsync(key, cancellationToken);
@@ -160,7 +160,7 @@ namespace MTG_Cards.Repositories
 			
 			cardOwned.Quantity = cardToUpdate.Quantity;
 
-			// After updating the card in user's collection, update cache
+			// After updating the card in user's collection, reset cache
 			if (!string.IsNullOrEmpty(cachedCards))
 			{
 				await _distributedCache.RemoveAsync(key, cancellationToken);
@@ -184,7 +184,7 @@ namespace MTG_Cards.Repositories
 
 			_context.CardsOwned.Remove(cardOwned);
 
-			// After removing the card, update cache if it exists
+			// After removing the card, reset cache if it exists
 			if (!string.IsNullOrEmpty(cachedCards))
 			{
 				await _distributedCache.RemoveAsync(key, cancellationToken);

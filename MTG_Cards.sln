@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MTG_Cards", "MTG_Cards\MTG_Cards.csproj", "{47CF5E09-93C7-4279-8B72-7A1100FD9859}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MTG_Cards", "MTG_Cards\MTG_Cards.csproj", "{47CF5E09-93C7-4279-8B72-7A1100FD9859}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MTG_CardsTests", "MTG_CardsTests\MTG_CardsTests.csproj", "{4D7E4F18-6369-4D10-89CE-D0CF0D2FD98E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{47CF5E09-93C7-4279-8B72-7A1100FD9859}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47CF5E09-93C7-4279-8B72-7A1100FD9859}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47CF5E09-93C7-4279-8B72-7A1100FD9859}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D7E4F18-6369-4D10-89CE-D0CF0D2FD98E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D7E4F18-6369-4D10-89CE-D0CF0D2FD98E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D7E4F18-6369-4D10-89CE-D0CF0D2FD98E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D7E4F18-6369-4D10-89CE-D0CF0D2FD98E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
