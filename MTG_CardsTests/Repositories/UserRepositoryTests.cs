@@ -26,10 +26,21 @@ namespace MTG_Cards.Repositories.Tests
 		private UserRepository _userRepository;
 		private Mock<DbSet<User>> _mockUserSet;
 		private UserController _userController;
+		private Mock<HttpContext> _mockHttpContext;
+		private Mock<HttpResponse> _mockHttpResponse;
+		private Mock<IResponseCookies> _mockResponseCookies;
 
 		[TestInitialize]
 		public void Setup()
 		{
+			// Mock Http
+			_mockHttpContext = new Mock<HttpContext>();
+			_mockHttpResponse = new Mock<HttpResponse>();
+			_mockResponseCookies = new Mock<IResponseCookies>();
+
+			_mockHttpResponse.Setup(r => r.Cookies).Returns(_mockResponseCookies.Object);
+			_mockHttpContext.Setup(c => c.Response).Returns(_mockHttpResponse.Object);
+
 			// Mock DbContext and DbSet
 			var options = new DbContextOptionsBuilder<DataContext>()
 				.UseInMemoryDatabase(databaseName: "TestDatabase")
@@ -38,7 +49,7 @@ namespace MTG_Cards.Repositories.Tests
 			_context = new DataContext(options);
 			_mockUserSet = new Mock<DbSet<User>>();
 
-			
+			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
 
 			var users = new List<User>()
 			{
@@ -60,7 +71,13 @@ namespace MTG_Cards.Repositories.Tests
 			_userRepository = new UserRepository(_context, _mockCache.Object);
 
 			// Controller instance
-			_userController = new UserController(_userRepository);
+			_userController = new UserController(_userRepository)
+			{
+				ControllerContext = new ControllerContext
+				{
+					HttpContext = _mockHttpContext.Object
+				}
+			};
 		}
 
 		[TestMethod()]
@@ -164,6 +181,71 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual(StatusCodes.Status400BadRequest, result2.StatusCode);
 		}
 
+		[TestMethod()]
+		public void LoginUser_Success()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
 
+			// Act
+			var registerActionResult = _userController.RegisterUser(userLoginDTO);
+			var loginActionResult = _userController.LoginUser(userLoginDTO);
+			var loginResult = loginActionResult as ObjectResult;
+
+			// Assert
+			Assert.AreEqual(StatusCodes.Status200OK, loginResult.StatusCode);
+			Assert.AreEqual("Successfully logged in", loginResult.Value);
+
+			// Verify cookie was set
+			_mockResponseCookies.Verify(
+				c => c.Append(
+					"auth",
+					It.Is<string>(s => s.StartsWith("Sam.")),
+					It.IsAny<CookieOptions>()),
+					Times.Once
+				);
+		}
+
+		[TestMethod()]
+		public void LoginUser_UserNotFound()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
+
+			// Act
+			var loginActionResult = _userController.LoginUser(userLoginDTO);
+			var loginResult = loginActionResult as ObjectResult;
+
+			// Assert
+			Assert.AreEqual(StatusCodes.Status404NotFound, loginResult.StatusCode);
+			Assert.AreEqual("User not found", loginResult.Value);
+		}
+
+		[TestMethod()]
+		public void LoginUser_InvalidPassword()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Bob",
+				Password = "Bob's Password" // Stored password is not hashed, but the login attempt hashes password
+			};
+
+			// Act
+			var loginActionResult = _userController.LoginUser(userLoginDTO);
+			var loginResult = loginActionResult as ObjectResult;
+
+			// Assert
+			Assert.AreEqual(StatusCodes.Status400BadRequest, loginResult.StatusCode);
+			Assert.AreEqual("Invalid user credentials", loginResult.Value);
+		}
 	}
 }
