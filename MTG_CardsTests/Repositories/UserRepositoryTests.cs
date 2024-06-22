@@ -61,6 +61,10 @@ namespace MTG_Cards.Repositories.Tests
 			_mockUserSet.As<IQueryable<User>>().Setup(m => m.ElementType).Returns(users.ElementType);
 			_mockUserSet.As<IQueryable<User>>().Setup(m => m.GetEnumerator()).Returns(users.GetEnumerator());
 
+			// Clear Users
+			var usersInContext = _context.Users.ToList();
+			_context.Users.RemoveRange(usersInContext);
+
 			_context.Users.AddRange(users);
 			_context.SaveChanges();
 
@@ -132,7 +136,6 @@ namespace MTG_Cards.Repositories.Tests
 		{
 			// Arrange
 			string username = "Sam";
-			var expectedUser = new User { Id = 2, Username = username, Password = "Sam's Password" };
 
 			// Act
 			var result = _userRepository.GetUserByUsername(username);
