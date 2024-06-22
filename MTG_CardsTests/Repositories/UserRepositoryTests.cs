@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using MTG_Cards.Controllers;
 using MTG_Cards.Data;
+using MTG_Cards.DTOs;
 using MTG_Cards.Interfaces;
 using MTG_Cards.Models;
 using MTG_Cards.Repositories;
@@ -22,6 +25,7 @@ namespace MTG_Cards.Repositories.Tests
 		private Mock<IDistributedCache> _mockCache;
 		private UserRepository _userRepository;
 		private Mock<DbSet<User>> _mockUserSet;
+		private UserController _userController;
 
 		[TestInitialize]
 		public void Setup()
@@ -54,10 +58,43 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Repository instance
 			_userRepository = new UserRepository(_context, _mockCache.Object);
+
+			// Controller instance
+			_userController = new UserController(_userRepository);
 		}
 
 		[TestMethod()]
-		public void GetUserByUsername()
+		public void GetUserById_ValidId()
+		{
+			// Arrange
+			int id = 1;
+			var expectedUser = new User { Id = id, Username = "Bob", Password = "Bob's Password" };
+
+			// Act
+			var result = _userRepository.GetUserById(id);
+
+			// Assert
+			Assert.IsNotNull(result);
+			Assert.AreEqual(id, result.Id);
+			Assert.AreEqual(expectedUser.Username, result.Username);
+		}
+
+		[TestMethod()]
+		public void GetUserById_InvalidId()
+		{
+			// Arrange
+			int id = 2;
+			var expectedUser = new User { Id = id, Username = "Bob", Password = "Bob's Password" };
+
+			// Act
+			var result = _userRepository.GetUserById(id);
+
+			// Assert
+			Assert.IsNull(result);
+		}
+
+		[TestMethod()]
+		public void GetUserByUsername_ValidUsername()
 		{
 			// Arrange
 			string username = "Bob";
@@ -72,5 +109,61 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual(username, result.Username);
 			Assert.AreEqual("Bob's Password", result.Password);
 		}
+
+		[TestMethod()]
+		public void GetUserByUsername_InvalidUsername()
+		{
+			// Arrange
+			string username = "Sam";
+			var expectedUser = new User { Id = 2, Username = username, Password = "Sam's Password" };
+
+			// Act
+			var result = _userRepository.GetUserByUsername(username);
+
+			// Assert
+			Assert.IsNull(result);
+		}
+
+		[TestMethod()]
+		public void RegisterUser_Success()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
+
+			// Act
+			_userRepository.RegisterUser(userLoginDTO);
+			var userSam = _userRepository.GetUserByUsername("Sam");
+
+			// Assert
+			Assert.IsNotNull(userSam);
+			Assert.AreEqual("Sam", userSam.Username);
+		}
+
+		[TestMethod()]
+		public void RegisterUser_UserAlreadyExists()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
+
+			// Act
+			var samActionResult1 = _userController.RegisterUser(userLoginDTO);
+			var samActionResult2 = _userController.RegisterUser(userLoginDTO); // Registering Sam again
+			var result1 = samActionResult1 as ObjectResult;
+			var result2 = samActionResult2 as ObjectResult;
+
+			// Assert
+			Assert.AreEqual(StatusCodes.Status200OK, result1.StatusCode);
+			Assert.AreEqual(StatusCodes.Status400BadRequest, result2.StatusCode);
+		}
+
+
 	}
 }
