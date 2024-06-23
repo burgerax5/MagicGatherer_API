@@ -180,7 +180,7 @@ namespace MTG_Cards.Repositories
 				cancellationToken);
 
 			var cardOwned = _context.CardsOwned.Include(co => co.User).FirstOrDefault(co => co.Id == id);
-			if ( cardOwned == null) return false;
+			if (cardOwned == null) return false;
 			else if (cardOwned.User != user) return false;
 
 			_context.CardsOwned.Remove(cardOwned);
