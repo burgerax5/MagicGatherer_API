@@ -30,36 +30,62 @@ namespace MTG_Cards.Repositories.Tests
 		private Mock<DbSet<User>> _mockUserSet;
 		private Mock<DbSet<Edition>> _mockEditionSet;
 		private Mock<DbSet<Card>> _mockCardSet;
+		private Mock<DbSet<CardCondition>> _mockCardConditionSet;
+		private Mock<DbSet<CardOwned>> _mockCardOwnedSet;
 
 		private UserController _userController;
 		private Mock<HttpContext> _mockHttpContext;
 		private Mock<HttpResponse> _mockHttpResponse;
 		private Mock<IResponseCookies> _mockResponseCookies;
 
-		[TestInitialize]
-		public void Setup()
+		private void MockHttp()
 		{
-			// Mock Http
 			_mockHttpContext = new Mock<HttpContext>();
 			_mockHttpResponse = new Mock<HttpResponse>();
 			_mockResponseCookies = new Mock<IResponseCookies>();
 
 			_mockHttpResponse.Setup(r => r.Cookies).Returns(_mockResponseCookies.Object);
 			_mockHttpContext.Setup(c => c.Response).Returns(_mockHttpResponse.Object);
+		}
 
-			// Mock DbContext and DbSet
+		private void MockDbContext()
+		{
 			var options = new DbContextOptionsBuilder<DataContext>()
 				.UseInMemoryDatabase(databaseName: "TestDatabase")
 				.Options;
 
 			_context = new DataContext(options);
+		}
+
+		private void MockDbSet()
+		{
 			_mockUserSet = new Mock<DbSet<User>>();
 			_mockCardSet = new Mock<DbSet<Card>>();
 			_mockEditionSet = new Mock<DbSet<Edition>>();
+			_mockCardConditionSet = new Mock<DbSet<CardCondition>>();
+			_mockCardOwnedSet = new Mock<DbSet<CardOwned>>();
+		}
 
-			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
+		private void ClearDatabase()
+		{
+			var usersInDB = _context.Users.ToList();
+			_context.Users.RemoveRange(usersInDB);
 
+			var cardsInDB = _context.Cards.ToList();
+			_context.Cards.RemoveRange(cardsInDB);
 
+			var cardsOwnedInDB = _context.CardsOwned.ToList();
+			_context.CardsOwned.RemoveRange(cardsOwnedInDB);
+
+			var cardConditionsInDB = _context.CardConditions.ToList();
+			_context.CardConditions.RemoveRange(cardConditionsInDB);
+
+			var editionsInDB = _context.Editions.ToList();
+			_context.Editions.RemoveRange(editionsInDB);
+		}
+
+		private void SeedDatabase()
+		{
 			// Set up user
 			var users = new List<User>()
 			{
@@ -69,9 +95,28 @@ namespace MTG_Cards.Repositories.Tests
 
 
 			// Set up editions & cards
+			var cardConditions = new List<CardCondition>()
+			{
+				new CardCondition { Id = 1, CardId = 1, Condition = Condition.NM, Quantity = 1 },
+				new CardCondition { Id = 2, CardId = 1, Condition = Condition.EX, Quantity = 0 },
+				new CardCondition { Id = 3, CardId = 1, Condition = Condition.VG, Quantity = 0 },
+				new CardCondition { Id = 4, CardId = 1, Condition = Condition.G, Quantity = 0 },
+				new CardCondition { Id = 5, CardId = 2, Condition = Condition.NM, Quantity = 1 },
+				new CardCondition { Id = 6, CardId = 2, Condition = Condition.EX, Quantity = 0 },
+				new CardCondition { Id = 7, CardId = 2, Condition = Condition.VG, Quantity = 0 },
+				new CardCondition { Id = 8, CardId = 2, Condition = Condition.G, Quantity = 0 },
+			};
+			SetupMockDbSet(_mockCardConditionSet, cardConditions.AsQueryable());
+
+			var cardsOwned = new List<CardOwned>()
+			{
+				new CardOwned { Id = 1, CardConditionId = 1, Quantity = 2, User = users[0] }
+			};
+			SetupMockDbSet(_mockCardOwnedSet, cardsOwned.AsQueryable());
+
 			var cards = new List<Card>()
 			{
-				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL" },
+				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions },
 				new Card { Id = 2, Name = "Card 2", ImageURL = "Image URL" }
 			};
 			SetupMockDbSet(_mockCardSet, cards.AsQueryable());
@@ -82,22 +127,26 @@ namespace MTG_Cards.Repositories.Tests
 			};
 			SetupMockDbSet(_mockEditionSet, editions.AsQueryable());
 
-
-			// Clear DB
-			var usersInDB = _context.Users.ToList();
-			_context.Users.RemoveRange(usersInDB);
-
-			var cardsInDB = _context.Cards.ToList();
-			_context.Cards.RemoveRange(cardsInDB);
-
-			var editionsInDB = _context.Editions.ToList();
-			_context.Editions.RemoveRange(editionsInDB);
-
 			// Populate DB
 			_context.Users.AddRange(users);
 			_context.Cards.AddRange(cards);
+			_context.CardConditions.AddRange(cardConditions);
+			_context.CardsOwned.AddRange(cardsOwned);
 			_context.Editions.AddRange(editions);
 			_context.SaveChanges();
+		}
+
+		[TestInitialize]
+		public void Setup()
+		{
+			MockHttp();
+			MockDbContext();
+			MockDbSet();
+
+			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
+
+			ClearDatabase();
+			SeedDatabase();
 
 			// Mock cache
 			_mockCache = new Mock<IDistributedCache>();
@@ -115,6 +164,7 @@ namespace MTG_Cards.Repositories.Tests
 			};
 		}
 
+
 		private void SetupMockDbSet<T>(Mock<DbSet<T>> mockSet, IQueryable<T> data) where T : class
 		{
 			mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
@@ -122,6 +172,7 @@ namespace MTG_Cards.Repositories.Tests
 			mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
 			mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
 		}
+
 
 		[TestMethod()]
 		public void GetUserById_ValidId()
@@ -139,6 +190,7 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual(expectedUser.Username, result.Username);
 		}
 
+
 		[TestMethod()]
 		public void GetUserById_InvalidId()
 		{
@@ -152,6 +204,7 @@ namespace MTG_Cards.Repositories.Tests
 			// Assert
 			Assert.IsNull(result);
 		}
+
 
 		[TestMethod()]
 		public void GetUserByUsername_ValidUsername()
@@ -170,6 +223,7 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual("Bob's Password", result.Password);
 		}
 
+
 		[TestMethod()]
 		public void GetUserByUsername_InvalidUsername()
 		{
@@ -182,6 +236,7 @@ namespace MTG_Cards.Repositories.Tests
 			// Assert
 			Assert.IsNull(result);
 		}
+
 
 		[TestMethod()]
 		public void RegisterUser_Success()
@@ -223,6 +278,7 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual(StatusCodes.Status400BadRequest, result2.StatusCode);
 		}
 
+
 		[TestMethod()]
 		public void LoginUser_Success()
 		{
@@ -252,6 +308,7 @@ namespace MTG_Cards.Repositories.Tests
 				);
 		}
 
+
 		[TestMethod()]
 		public void LoginUser_UserNotFound()
 		{
@@ -270,6 +327,7 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual(StatusCodes.Status404NotFound, loginResult.StatusCode);
 			Assert.AreEqual("User not found", loginResult.Value);
 		}
+
 
 		[TestMethod()]
 		public void LoginUser_InvalidPassword()
@@ -290,6 +348,7 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual("Invalid user credentials", loginResult.Value);
 		}
 
+
 		[TestMethod()]
 		public async Task GetCardsOwned_ValidUser_NoCards()
 		{
@@ -301,6 +360,28 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Assert
 			Assert.AreEqual(0, cardsOwned.Count);
+		}
+
+
+		[TestMethod()]
+		public async Task AddCardsOwned_ValidCardCondition()
+		{
+			// Arrange
+			var user = new User { Id = 1, Username = "Bob" };
+			var cardOwned = new CreateCardOwnedDTO 
+			{ 
+				CardId = 1,
+				Condition = "NM",
+				Quantity = 1,
+			};
+
+			// Act
+			var isAddCardSuccess = await _userRepository.AddUserCard(user, cardOwned);
+			var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
+
+			// Assert
+			Assert.IsTrue(isAddCardSuccess);
+			Assert.AreEqual(1, cardsOwned.Count);
 		}
 	}
 }
