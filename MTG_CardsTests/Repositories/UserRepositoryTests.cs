@@ -101,23 +101,18 @@ namespace MTG_Cards.Repositories.Tests
 				new CardCondition { Id = 2, CardId = 1, Condition = Condition.EX, Quantity = 0 },
 				new CardCondition { Id = 3, CardId = 1, Condition = Condition.VG, Quantity = 0 },
 				new CardCondition { Id = 4, CardId = 1, Condition = Condition.G, Quantity = 0 },
-				new CardCondition { Id = 5, CardId = 2, Condition = Condition.NM, Quantity = 1 },
-				new CardCondition { Id = 6, CardId = 2, Condition = Condition.EX, Quantity = 0 },
-				new CardCondition { Id = 7, CardId = 2, Condition = Condition.VG, Quantity = 0 },
-				new CardCondition { Id = 8, CardId = 2, Condition = Condition.G, Quantity = 0 },
 			};
 			SetupMockDbSet(_mockCardConditionSet, cardConditions.AsQueryable());
 
 			var cardsOwned = new List<CardOwned>()
 			{
-				new CardOwned { Id = 1, CardConditionId = 1, Quantity = 2, User = users[0] }
+				new CardOwned { Id = 1, CardConditionId = 1, Quantity = 2, UserId = 1 }
 			};
 			SetupMockDbSet(_mockCardOwnedSet, cardsOwned.AsQueryable());
 
 			var cards = new List<Card>()
 			{
 				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions },
-				new Card { Id = 2, Name = "Card 2", ImageURL = "Image URL" }
 			};
 			SetupMockDbSet(_mockCardSet, cards.AsQueryable());
 
@@ -136,6 +131,14 @@ namespace MTG_Cards.Repositories.Tests
 			_context.SaveChanges();
 		}
 
+		private void SetupMockDbSet<T>(Mock<DbSet<T>> mockSet, IQueryable<T> data) where T : class
+		{
+			mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
+			mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
+			mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
+			mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
+		}
+
 		[TestInitialize]
 		public void Setup()
 		{
@@ -143,6 +146,7 @@ namespace MTG_Cards.Repositories.Tests
 			MockDbContext();
 			MockDbSet();
 
+			// Set environment variable
 			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
 
 			ClearDatabase();
@@ -162,15 +166,6 @@ namespace MTG_Cards.Repositories.Tests
 					HttpContext = _mockHttpContext.Object
 				}
 			};
-		}
-
-
-		private void SetupMockDbSet<T>(Mock<DbSet<T>> mockSet, IQueryable<T> data) where T : class
-		{
-			mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
-			mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
-			mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
-			mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
 		}
 
 
@@ -196,7 +191,6 @@ namespace MTG_Cards.Repositories.Tests
 		{
 			// Arrange
 			int id = 2;
-			var expectedUser = new User { Id = id, Username = "Bob", Password = "Bob's Password" };
 
 			// Act
 			var result = _userRepository.GetUserById(id);
@@ -350,16 +344,16 @@ namespace MTG_Cards.Repositories.Tests
 
 
 		[TestMethod()]
-		public async Task GetCardsOwned_ValidUser_NoCards()
+		public async Task GetCardsOwned_ValidUser()
 		{
-			// Arrange
-			var username = "Bob";
-
 			// Act
-			var cardsOwned = await _userRepository.GetCardsOwned(username);
+			var cardsOwned = await _userRepository.GetCardsOwned("Bob");
+			var card = cardsOwned.FirstOrDefault();
 
 			// Assert
-			Assert.AreEqual(0, cardsOwned.Count);
+			Assert.AreEqual(1, cardsOwned.Count); // I pre-populated Bob's cards owned
+			Assert.AreEqual("Card 1", card.CardName);
+			Assert.AreEqual("NM", card.Condition);
 		}
 
 
@@ -367,11 +361,11 @@ namespace MTG_Cards.Repositories.Tests
 		public async Task AddCardsOwned_ValidCardCondition()
 		{
 			// Arrange
-			var user = new User { Id = 1, Username = "Bob" };
-			var cardOwned = new CreateCardOwnedDTO 
-			{ 
+			var user = _context.Users.First();
+			var cardOwned = new CreateCardOwnedDTO
+			{
 				CardId = 1,
-				Condition = "NM",
+				Condition = "VG",
 				Quantity = 1,
 			};
 
@@ -381,7 +375,101 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Assert
 			Assert.IsTrue(isAddCardSuccess);
+			Assert.AreEqual(2, cardsOwned.Count);
+		}
+
+
+		[TestMethod()]
+		public async Task AddCardsOwned_InvalidCardCondition()
+		{
+			// Arrange
+			var user = _context.Users.First();
+			var cardOwned = new CreateCardOwnedDTO
+			{
+				CardId = 2,
+				Condition = "VG",
+				Quantity = 1,
+			};
+
+			// Act
+			var isAddCardSuccess = await _userRepository.AddUserCard(user, cardOwned);
+			var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
+
+			// Assert
+			Assert.IsFalse(isAddCardSuccess);
 			Assert.AreEqual(1, cardsOwned.Count);
+		}
+
+
+		[TestMethod()]
+		public async Task AddCardsOwned_ExistingCardCondition_DontAdd()
+		{
+			// Arrange
+			var user = _context.Users.First();
+			var cardOwned = new CreateCardOwnedDTO
+			{
+				CardId = 1,
+				Condition = "VG",
+				Quantity = 1,
+			};
+
+			// Act
+			var isFirstAddSuccess = await _userRepository.AddUserCard(user, cardOwned);
+			var isSecondAddSuccess = await _userRepository.AddUserCard(user, cardOwned);
+			var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
+
+			// Assert
+			Assert.IsTrue(isFirstAddSuccess);
+			Assert.IsFalse(isSecondAddSuccess);
+			Assert.AreEqual(2, cardsOwned.Count);
+		}
+
+
+		[TestMethod()]
+		public async Task UpdateUserCard_InvalidCardId()
+		{
+			// Arrange
+			var user = _context.Users.First();
+			var id = 2;
+			UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
+
+			// Act
+			var isUpdateSuccess = await _userRepository.UpdateUserCard(user, id, updateCardOwned);
+
+			// Assert
+			Assert.IsFalse(isUpdateSuccess);
+		}
+
+
+		[TestMethod()]
+		public async Task UpdateUserCard_ValidCardId_WrongUser()
+		{
+			// Arrange
+			var user = new User { Id = 2, Username = "Speedwagon" };
+			var id = 1;
+			UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
+
+			// Act
+			var isUpdateSuccess = await _userRepository.UpdateUserCard(user, id, updateCardOwned);
+
+			// Assert
+			Assert.IsFalse(isUpdateSuccess);
+		}
+
+
+		[TestMethod()]
+		public async Task UpdateUserCard_Success()
+		{
+			// Arrange
+			var user = _context.Users.First();
+			var id = 1;
+			UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
+
+			// Act
+			var isUpdateSuccess = await _userRepository.UpdateUserCard(user, id, updateCardOwned);
+
+			// Assert
+			Assert.IsTrue(isUpdateSuccess);
 		}
 	}
 }

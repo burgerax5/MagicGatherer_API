@@ -134,7 +134,8 @@ namespace MTG_Cards.Repositories
 				.AnyAsync(c => c.UserId == user.Id && c.CardCondition.Condition == condition);
 			if (hasCardCondition) return false;
 
-			user.CardsOwned.Add(CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user));
+			CardOwned cardOwned = CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user);
+			user.CardsOwned.Add(cardOwned);
 
 			// After adding the card, reset cache if it exists
 			if (!string.IsNullOrEmpty(cachedCards))
