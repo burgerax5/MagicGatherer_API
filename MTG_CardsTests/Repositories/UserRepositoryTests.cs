@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -13,6 +14,7 @@ using MTG_Cards.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,7 +26,11 @@ namespace MTG_Cards.Repositories.Tests
 		private DataContext _context;
 		private Mock<IDistributedCache> _mockCache;
 		private UserRepository _userRepository;
+
 		private Mock<DbSet<User>> _mockUserSet;
+		private Mock<DbSet<Edition>> _mockEditionSet;
+		private Mock<DbSet<Card>> _mockCardSet;
+
 		private UserController _userController;
 		private Mock<HttpContext> _mockHttpContext;
 		private Mock<HttpResponse> _mockHttpResponse;
@@ -48,24 +54,49 @@ namespace MTG_Cards.Repositories.Tests
 
 			_context = new DataContext(options);
 			_mockUserSet = new Mock<DbSet<User>>();
+			_mockCardSet = new Mock<DbSet<Card>>();
+			_mockEditionSet = new Mock<DbSet<Edition>>();
 
 			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
 
+
+			// Set up user
 			var users = new List<User>()
 			{
 				new User { Id = 1, Username = "Bob", Password = "Bob's Password", Salt = "Salt" }
-			}.AsQueryable();
+			};
+			SetupMockDbSet(_mockUserSet, users.AsQueryable());
 
-			_mockUserSet.As<IQueryable<User>>().Setup(m => m.Provider).Returns(users.Provider);
-			_mockUserSet.As<IQueryable<User>>().Setup(m => m.Expression).Returns(users.Expression);
-			_mockUserSet.As<IQueryable<User>>().Setup(m => m.ElementType).Returns(users.ElementType);
-			_mockUserSet.As<IQueryable<User>>().Setup(m => m.GetEnumerator()).Returns(users.GetEnumerator());
 
-			// Clear Users
-			var usersInContext = _context.Users.ToList();
-			_context.Users.RemoveRange(usersInContext);
+			// Set up editions & cards
+			var cards = new List<Card>()
+			{
+				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL" },
+				new Card { Id = 2, Name = "Card 2", ImageURL = "Image URL" }
+			};
+			SetupMockDbSet(_mockCardSet, cards.AsQueryable());
 
+			var editions = new List<Edition>()
+			{
+				new Edition { Id = 1, Name = "Edition Name", Code = "edition-code", Cards = cards }
+			};
+			SetupMockDbSet(_mockEditionSet, editions.AsQueryable());
+
+
+			// Clear DB
+			var usersInDB = _context.Users.ToList();
+			_context.Users.RemoveRange(usersInDB);
+
+			var cardsInDB = _context.Cards.ToList();
+			_context.Cards.RemoveRange(cardsInDB);
+
+			var editionsInDB = _context.Editions.ToList();
+			_context.Editions.RemoveRange(editionsInDB);
+
+			// Populate DB
 			_context.Users.AddRange(users);
+			_context.Cards.AddRange(cards);
+			_context.Editions.AddRange(editions);
 			_context.SaveChanges();
 
 			// Mock cache
@@ -82,6 +113,14 @@ namespace MTG_Cards.Repositories.Tests
 					HttpContext = _mockHttpContext.Object
 				}
 			};
+		}
+
+		private void SetupMockDbSet<T>(Mock<DbSet<T>> mockSet, IQueryable<T> data) where T : class
+		{
+			mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
+			mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
+			mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
+			mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
 		}
 
 		[TestMethod()]
@@ -249,6 +288,19 @@ namespace MTG_Cards.Repositories.Tests
 			// Assert
 			Assert.AreEqual(StatusCodes.Status400BadRequest, loginResult.StatusCode);
 			Assert.AreEqual("Invalid user credentials", loginResult.Value);
+		}
+
+		[TestMethod()]
+		public async Task GetCardsOwned_ValidUser_NoCards()
+		{
+			// Arrange
+			var username = "Bob";
+
+			// Act
+			var cardsOwned = await _userRepository.GetCardsOwned(username);
+
+			// Assert
+			Assert.AreEqual(0, cardsOwned.Count);
 		}
 	}
 }
