@@ -20,7 +20,7 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public async Task<ICollection<EditionDropdownDTO>> GetEditionNames()
+        public async Task<List<EditionDropdownDTO>> GetEditionNames()
         {
             string key = "edition_names";
             CancellationToken cancellationToken = default;
@@ -32,7 +32,7 @@ namespace MTG_Cards.Repositories
             if (string.IsNullOrEmpty(cachedEditions)) 
             {
 				ICollection<Edition> editions = _context.Editions.ToList();
-				ICollection<EditionDropdownDTO> editionDTOs = new List<EditionDropdownDTO>();
+				List<EditionDropdownDTO> editionDTOs = new List<EditionDropdownDTO>();
 				foreach (Edition edition in editions)
 				{
 					editionDTOs.Add(new EditionDropdownDTO(edition.Name, edition.Code));
@@ -47,7 +47,7 @@ namespace MTG_Cards.Repositories
                 return editionDTOs;
 			}
 
-            var deserializedEditionDTOs = JsonConvert.DeserializeObject<ICollection<EditionDropdownDTO>>(cachedEditions);
+            var deserializedEditionDTOs = JsonConvert.DeserializeObject<List<EditionDropdownDTO>>(cachedEditions);
             if (deserializedEditionDTOs == null) return [];
 
 			return deserializedEditionDTOs;
