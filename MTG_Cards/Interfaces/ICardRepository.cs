@@ -5,8 +5,8 @@ namespace MTG_Cards.Interfaces
 {
     public interface ICardRepository
     {
-        Task<ICollection<CardDTO>> GetCards(int page);
+        Task<List<CardDTO>> GetCards(int page);
 		Task<CardDTO?> GetCardById(int id);
-        Task<ICollection<CardDTO>> GetCardsByName(string name);
+        Task<List<CardDTO>> GetCardsByName(string name);
     }
 }

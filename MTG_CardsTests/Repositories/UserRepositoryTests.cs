@@ -62,12 +62,17 @@ namespace MTG_Cards.Repositories.Tests
 				new CardCondition { Id = 2, CardId = 1, Condition = Condition.EX, Quantity = 0 },
 				new CardCondition { Id = 3, CardId = 1, Condition = Condition.VG, Quantity = 0 },
 				new CardCondition { Id = 4, CardId = 1, Condition = Condition.G, Quantity = 0 },
+				new CardCondition { Id = 5, CardId = 2, Condition = Condition.NM, Quantity = 1 },
+				new CardCondition { Id = 6, CardId = 2, Condition = Condition.EX, Quantity = 0 },
+				new CardCondition { Id = 7, CardId = 2, Condition = Condition.VG, Quantity = 0 },
+				new CardCondition { Id = 8, CardId = 2, Condition = Condition.G, Quantity = 0 },
 			};
 			SetupMockDbSet(_mockCardConditionSet, cardConditions.AsQueryable());
 
 			var cards = new List<Card>()
 			{
-				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions },
+				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions.Slice(0,4) },
+				new Card { Id = 2, Name = "Card 2", ImageURL = "Image URL", Conditions = cardConditions.Slice(4,4)}
 			};
 			SetupMockDbSet(_mockCardSet, cards.AsQueryable());
 
@@ -111,6 +116,72 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Repository instance
 			_cardRepository = new CardRepository(_context, _mockCache.Object);
+		}
+
+		[TestMethod()]
+		public async Task GetCardById_InvalidId()
+		{
+			// Act
+			var card = await _cardRepository.GetCardById(id: 3);
+
+			// Assert
+			Assert.IsNull(card);
+		}
+
+		[TestMethod()]
+		public async Task GetCardById_ValidId()
+		{
+			// Act
+			var card1 = await _cardRepository.GetCardById(id: 1);
+			var card2 = await _cardRepository.GetCardById(id: 2);
+
+			// Assert
+			Assert.IsNotNull(card1);
+			Assert.IsNotNull(card2);
+			Assert.AreEqual("Card 1", card1?.Name);
+			Assert.AreEqual("Card 2", card2?.Name);
+		}
+
+		[TestMethod()]
+		public async Task GetCardsByName_CommonSubstring()
+		{
+			// Arrange
+			var commonSubstring = "Card";
+
+			// Act
+			var cards = await _cardRepository.GetCardsByName(commonSubstring);
+
+			// Assert
+			Assert.IsTrue(cards.Count == 2);
+			Assert.AreEqual("Card 1", cards[0].Name);
+			Assert.AreEqual("Card 2", cards[1].Name);
+		}
+
+		[TestMethod()]
+		public async Task GetCardsByName_NoCardWithSubstring()
+		{
+			// Arrange
+			var commonSubstring = "Shadow of the Erdtree";
+
+			// Act
+			var cards = await _cardRepository.GetCardsByName(commonSubstring);
+
+			// Assert
+			Assert.IsTrue(cards.Count == 0);
+		}
+
+		[TestMethod()]
+		public async Task GetCardsByName_UniqueSubstring()
+		{
+			// Arrange
+			var commonSubstring = "Card 1";
+
+			// Act
+			var cards = await _cardRepository.GetCardsByName(commonSubstring);
+
+			// Assert
+			Assert.IsTrue(cards.Count == 1);
+			Assert.AreEqual("Card 1", cards[0].Name);
 		}
 	}
 

@@ -21,7 +21,7 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public async Task<ICollection<CardDTO>> GetCards(int page)
+        public async Task<List<CardDTO>> GetCards(int page)
         {
             string key = $"all_cards_page_{page}";
 			CancellationToken cancellationToken = default;
@@ -54,7 +54,7 @@ namespace MTG_Cards.Repositories
                 return cardsDTO;
 			}
 
-            return JsonConvert.DeserializeObject<ICollection<CardDTO>>(cachedCards);
+            return JsonConvert.DeserializeObject<List<CardDTO>>(cachedCards);
         }
 
         public async Task<CardDTO?> GetCardById(int id)
@@ -88,7 +88,7 @@ namespace MTG_Cards.Repositories
             return deserializedCard;
         }
 
-        public async Task<ICollection<CardDTO>> GetCardsByName(string name)
+        public async Task<List<CardDTO>> GetCardsByName(string name)
         {
             string normalizedName = name.ToLower().Trim();
             string key = $"cards-search-{normalizedName}";
@@ -106,7 +106,7 @@ namespace MTG_Cards.Repositories
 	                .Where(cards => cards.Name.Contains(name))
                     .ToListAsync();
 
-                ICollection<CardDTO> cardDTOs = new List<CardDTO>();
+				List<CardDTO> cardDTOs = new List<CardDTO>();
                 foreach (var card in cards)
                 {
                     cardDTOs.Add(CardMapper.ToDTO(card));
@@ -120,7 +120,7 @@ namespace MTG_Cards.Repositories
                 return cardDTOs;
 			}
 
-            var deserializedCards = JsonConvert.DeserializeObject<ICollection<CardDTO>>(cachedCards);
+            var deserializedCards = JsonConvert.DeserializeObject<List<CardDTO>>(cachedCards);
             return deserializedCards;
         }
     }

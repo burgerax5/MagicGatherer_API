@@ -39,7 +39,7 @@ namespace MTG_Cards.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetCardsByName([FromQuery] string name)
         {
-            ICollection<CardDTO> cards = await _repository.GetCardsByName(name);
+			List<CardDTO> cards = await _repository.GetCardsByName(name);
 
             if (cards.Count == 0)
                 return NotFound("No card with the name: " + name);
