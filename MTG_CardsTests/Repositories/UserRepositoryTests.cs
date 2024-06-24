@@ -21,6 +21,100 @@ using System.Threading.Tasks;
 namespace MTG_Cards.Repositories.Tests
 {
 	[TestClass()]
+	public class CardRepositoryTests
+	{
+		private DataContext _context;
+		private Mock<IDistributedCache> _mockCache;
+		private ICardRepository _cardRepository;
+
+		private Mock<DbSet<Edition>> _mockEditionSet;
+		private Mock<DbSet<Card>> _mockCardSet;
+		private Mock<DbSet<CardCondition>> _mockCardConditionSet;
+
+		private void MockDbContext()
+		{
+			var options = new DbContextOptionsBuilder<DataContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			_context = new DataContext(options);
+		}
+		private void ClearDatabase()
+		{
+			var cardsInDB = _context.Cards.ToList();
+			_context.Cards.RemoveRange(cardsInDB);
+
+			var cardsOwnedInDB = _context.CardsOwned.ToList();
+			_context.CardsOwned.RemoveRange(cardsOwnedInDB);
+
+			var cardConditionsInDB = _context.CardConditions.ToList();
+			_context.CardConditions.RemoveRange(cardConditionsInDB);
+
+			var editionsInDB = _context.Editions.ToList();
+			_context.Editions.RemoveRange(editionsInDB);
+		}
+		private void SeedDatabase()
+		{
+			// Set up editions & cards
+			var cardConditions = new List<CardCondition>()
+			{
+				new CardCondition { Id = 1, CardId = 1, Condition = Condition.NM, Quantity = 1 },
+				new CardCondition { Id = 2, CardId = 1, Condition = Condition.EX, Quantity = 0 },
+				new CardCondition { Id = 3, CardId = 1, Condition = Condition.VG, Quantity = 0 },
+				new CardCondition { Id = 4, CardId = 1, Condition = Condition.G, Quantity = 0 },
+			};
+			SetupMockDbSet(_mockCardConditionSet, cardConditions.AsQueryable());
+
+			var cards = new List<Card>()
+			{
+				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions },
+			};
+			SetupMockDbSet(_mockCardSet, cards.AsQueryable());
+
+			var editions = new List<Edition>()
+			{
+				new Edition { Id = 1, Name = "Edition Name", Code = "edition-code", Cards = cards }
+			};
+			SetupMockDbSet(_mockEditionSet, editions.AsQueryable());
+
+			// Populate DB
+			_context.Cards.AddRange(cards);
+			_context.CardConditions.AddRange(cardConditions);
+			_context.Editions.AddRange(editions);
+			_context.SaveChanges();
+		}
+		private void SetupMockDbSet<T>(Mock<DbSet<T>> mockSet, IQueryable<T> data) where T : class
+		{
+			mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
+			mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
+			mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
+			mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
+		}
+		private void MockDbSet()
+		{
+			_mockCardSet = new Mock<DbSet<Card>>();
+			_mockEditionSet = new Mock<DbSet<Edition>>();
+			_mockCardConditionSet = new Mock<DbSet<CardCondition>>();
+		}
+
+		[TestInitialize]
+		public void Setup()
+		{
+			MockDbContext();
+			MockDbSet();
+
+			ClearDatabase();
+			SeedDatabase();
+
+			// Mock cache
+			_mockCache = new Mock<IDistributedCache>();
+
+			// Repository instance
+			_cardRepository = new CardRepository(_context, _mockCache.Object);
+		}
+	}
+
+	[TestClass()]
 	public class EditionRepositoryTests
 	{
 		private DataContext _context;
@@ -163,7 +257,6 @@ namespace MTG_Cards.Repositories.Tests
 			_mockHttpResponse.Setup(r => r.Cookies).Returns(_mockResponseCookies.Object);
 			_mockHttpContext.Setup(c => c.Response).Returns(_mockHttpResponse.Object);
 		}
-
 		private void MockDbContext()
 		{
 			var options = new DbContextOptionsBuilder<DataContext>()
@@ -172,7 +265,6 @@ namespace MTG_Cards.Repositories.Tests
 
 			_context = new DataContext(options);
 		}
-
 		private void MockDbSet()
 		{
 			_mockUserSet = new Mock<DbSet<User>>();
@@ -181,7 +273,6 @@ namespace MTG_Cards.Repositories.Tests
 			_mockCardConditionSet = new Mock<DbSet<CardCondition>>();
 			_mockCardOwnedSet = new Mock<DbSet<CardOwned>>();
 		}
-
 		private void ClearDatabase()
 		{
 			var usersInDB = _context.Users.ToList();
@@ -199,7 +290,6 @@ namespace MTG_Cards.Repositories.Tests
 			var editionsInDB = _context.Editions.ToList();
 			_context.Editions.RemoveRange(editionsInDB);
 		}
-
 		private void SeedDatabase()
 		{
 			// Set up user
@@ -246,7 +336,6 @@ namespace MTG_Cards.Repositories.Tests
 			_context.Editions.AddRange(editions);
 			_context.SaveChanges();
 		}
-
 		private void SetupMockDbSet<T>(Mock<DbSet<T>> mockSet, IQueryable<T> data) where T : class
 		{
 			mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
@@ -264,8 +353,6 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Set environment variable
 			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
-
-			ClearDatabase();
 			SeedDatabase();
 
 			// Mock cache
@@ -282,6 +369,12 @@ namespace MTG_Cards.Repositories.Tests
 					HttpContext = _mockHttpContext.Object
 				}
 			};
+		}
+
+		[TestCleanup]
+		public void CleanUp()
+		{
+			ClearDatabase();
 		}
 
 
