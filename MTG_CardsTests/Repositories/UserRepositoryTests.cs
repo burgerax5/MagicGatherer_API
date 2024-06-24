@@ -90,6 +90,50 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual("Edition Name", editions[0].Name);
 			Assert.AreEqual("edition-code", editions[0].Code);
 		}
+
+		[TestMethod()]
+		public async Task GetEditionById_InvalidId()
+		{
+			// Act
+			var edition = await _editionRepository.GetEditionById(id: 2);
+
+			// Assert
+			Assert.IsNull(edition);
+		}
+
+		[TestMethod()]
+		public async Task GetEditionById_ValidId()
+		{
+			// Act
+			EditionDTO? edition = await _editionRepository.GetEditionById(id: 1);
+
+			// Assert
+			Assert.IsNotNull(edition);
+			Assert.AreEqual("Edition Name", edition?.Name);
+			Assert.IsTrue(edition?.Cards.Count == 0);
+		}
+
+		[TestMethod()]
+		public void GetEditionByName_InvalidName()
+		{
+			// Act
+			var edition = _editionRepository.GetEditionByName(name: "Edition");
+
+			// Assert
+			Assert.IsNull(edition);
+		}
+
+		[TestMethod()]
+		public void GetEditionByName_ValidName()
+		{
+			// Act
+			var edition = _editionRepository.GetEditionByName(name: "Edition Name");
+
+			// Assert
+			Assert.IsNotNull(edition);
+			Assert.AreEqual("Edition Name", edition?.Name);
+			Assert.IsTrue(edition?.Cards.Count == 0);
+		}
 	}
 
 	[TestClass()]
