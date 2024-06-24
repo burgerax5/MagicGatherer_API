@@ -26,11 +26,22 @@ namespace MTG_Cards.Repositories.Tests
 		private DataContext _context;
 		private Mock<IDistributedCache> _mockCache;
 		private ICardRepository _cardRepository;
+		private CardController _cardController;
 
 		private Mock<DbSet<Edition>> _mockEditionSet;
 		private Mock<DbSet<Card>> _mockCardSet;
 		private Mock<DbSet<CardCondition>> _mockCardConditionSet;
 
+		private Mock<HttpContext> _mockHttpContext;
+		private Mock<HttpResponse> _mockHttpResponse;
+
+		private void MockHttp()
+		{
+			_mockHttpContext = new Mock<HttpContext>();
+			_mockHttpResponse = new Mock<HttpResponse>();
+
+			_mockHttpContext.Setup(c => c.Response).Returns(_mockHttpResponse.Object);
+		}
 		private void MockDbContext()
 		{
 			var options = new DbContextOptionsBuilder<DataContext>()
@@ -113,6 +124,7 @@ namespace MTG_Cards.Repositories.Tests
 		[TestInitialize]
 		public void Setup()
 		{
+			MockHttp();
 			MockDbContext();
 			MockDbSet();
 
@@ -124,13 +136,22 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Repository instance
 			_cardRepository = new CardRepository(_context, _mockCache.Object);
+
+			// Controller instance
+			_cardController = new CardController(_cardRepository)
+			{
+				ControllerContext = new ControllerContext
+				{
+					HttpContext = _mockHttpContext.Object
+				}
+			};
 		}
 
 		[TestMethod()]
 		public async Task GetCardById_InvalidId()
 		{
 			// Act
-			var card = await _cardRepository.GetCardById(id: 3);
+			var card = await _cardRepository.GetCardById(id: -1);
 
 			// Assert
 			Assert.IsNull(card);
@@ -182,14 +203,49 @@ namespace MTG_Cards.Repositories.Tests
 		public async Task GetCardsByName_UniqueSubstring()
 		{
 			// Arrange
-			var commonSubstring = "Card 1";
+			var commonSubstring = "Card 51";
 
 			// Act
 			var cards = await _cardRepository.GetCardsByName(commonSubstring);
 
 			// Assert
 			Assert.IsTrue(cards.Count == 1);
-			Assert.AreEqual("Card 1", cards[0].Name);
+			Assert.AreEqual("Card 51", cards[0].Name);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_FirstPage()
+		{
+			// Act
+			var cards = await _cardRepository.GetCards(page: 0);
+
+			// Assert
+			Assert.IsTrue(cards.Count == 50);
+			Assert.AreEqual("Card 50", cards[49].Name);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_LastPage()
+		{
+			// Act
+			var cards = await _cardRepository.GetCards(page: 1);
+
+			// Assert
+			Assert.IsTrue(cards.Count == 1);
+			Assert.AreEqual("Card 51", cards[0].Name);
+		}
+
+		// Check is done on the controller, not repository
+		[TestMethod()]
+		public async Task GetCards_InvalidPage()
+		{
+			// Act
+			var actionResult = await _cardController.GetCards(page: -1);
+			var result = actionResult as ObjectResult;
+
+			// Arrange
+			Assert.AreEqual(StatusCodes.Status400BadRequest, result.StatusCode);
+			Assert.AreEqual("Invalid page", result.Value);
 		}
 	}
 
@@ -283,7 +339,7 @@ namespace MTG_Cards.Repositories.Tests
 			// Assert
 			Assert.IsNotNull(edition);
 			Assert.AreEqual("Edition Name", edition?.Name);
-			Assert.IsTrue(edition?.Cards.Count == 0);
+			Assert.IsTrue(edition?.Cards.Count == 51);
 		}
 
 		[TestMethod()]
@@ -432,6 +488,7 @@ namespace MTG_Cards.Repositories.Tests
 
 			// Set environment variable
 			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
+			ClearDatabase();
 			SeedDatabase();
 
 			// Mock cache
@@ -449,13 +506,6 @@ namespace MTG_Cards.Repositories.Tests
 				}
 			};
 		}
-
-		[TestCleanup]
-		public void CleanUp()
-		{
-			ClearDatabase();
-		}
-
 
 		[TestMethod()]
 		public void GetUserById_ValidId()
