@@ -44,36 +44,44 @@ namespace MTG_Cards.Repositories.Tests
 			var cardsInDB = _context.Cards.ToList();
 			_context.Cards.RemoveRange(cardsInDB);
 
-			var cardsOwnedInDB = _context.CardsOwned.ToList();
-			_context.CardsOwned.RemoveRange(cardsOwnedInDB);
-
 			var cardConditionsInDB = _context.CardConditions.ToList();
 			_context.CardConditions.RemoveRange(cardConditionsInDB);
 
 			var editionsInDB = _context.Editions.ToList();
 			_context.Editions.RemoveRange(editionsInDB);
 		}
+		private List<CardCondition> CreateCardConditions()
+		{
+			// We will have 51 cards => 51*4 = 204 card conditions
+			var conditions = new List<CardCondition>();
+			int cardIdCounter = 1;
+			for (int i = 1; i < 204; i += 4)
+			{
+				conditions.Add(new CardCondition { Id = i, CardId = cardIdCounter, Condition = Condition.NM, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i+1, CardId = cardIdCounter, Condition = Condition.EX, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i+2, CardId = cardIdCounter, Condition = Condition.VG, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i+3, CardId = cardIdCounter, Condition = Condition.G, Quantity = 1 });
+
+				cardIdCounter++;
+			}
+			return conditions;
+		}
+		private List<Card> CreateCards(List<CardCondition> cardConditions)
+		{
+			var cards = new List<Card>();
+			for (int i = 0; i < 51; i++)
+			{
+				cards.Add(new Card { Id = i+1, Name = $"Card {i+1}", ImageURL = "Image URL", Conditions = cardConditions.Slice(i*4, 4) });
+			}
+			return cards;
+		}
 		private void SeedDatabase()
 		{
 			// Set up editions & cards
-			var cardConditions = new List<CardCondition>()
-			{
-				new CardCondition { Id = 1, CardId = 1, Condition = Condition.NM, Quantity = 1 },
-				new CardCondition { Id = 2, CardId = 1, Condition = Condition.EX, Quantity = 0 },
-				new CardCondition { Id = 3, CardId = 1, Condition = Condition.VG, Quantity = 0 },
-				new CardCondition { Id = 4, CardId = 1, Condition = Condition.G, Quantity = 0 },
-				new CardCondition { Id = 5, CardId = 2, Condition = Condition.NM, Quantity = 1 },
-				new CardCondition { Id = 6, CardId = 2, Condition = Condition.EX, Quantity = 0 },
-				new CardCondition { Id = 7, CardId = 2, Condition = Condition.VG, Quantity = 0 },
-				new CardCondition { Id = 8, CardId = 2, Condition = Condition.G, Quantity = 0 },
-			};
+			var cardConditions = CreateCardConditions();
 			SetupMockDbSet(_mockCardConditionSet, cardConditions.AsQueryable());
 
-			var cards = new List<Card>()
-			{
-				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions.Slice(0,4) },
-				new Card { Id = 2, Name = "Card 2", ImageURL = "Image URL", Conditions = cardConditions.Slice(4,4)}
-			};
+			var cards = CreateCards(cardConditions);
 			SetupMockDbSet(_mockCardSet, cards.AsQueryable());
 
 			var editions = new List<Edition>()
@@ -152,9 +160,9 @@ namespace MTG_Cards.Repositories.Tests
 			var cards = await _cardRepository.GetCardsByName(commonSubstring);
 
 			// Assert
-			Assert.IsTrue(cards.Count == 2);
+			Assert.IsTrue(cards.Count == 51);
 			Assert.AreEqual("Card 1", cards[0].Name);
-			Assert.AreEqual("Card 2", cards[1].Name);
+			Assert.AreEqual("Card 51", cards[50].Name);
 		}
 
 		[TestMethod()]
