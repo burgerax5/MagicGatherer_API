@@ -24,7 +24,10 @@ namespace MTG_Cards.Services.Mappers
 			{ 
 				CardId = card.Id,
 				CardName = card.Name,
+				CardImageURL = card.ImageURL,
+				CardPrice = cardOwned.CardCondition.Price,
 				EditionName = card.Edition.Name,
+				EditionCode = card.Edition.Code,
 				CardOwnedId = cardOwned.Id,
 				Condition = cardOwned.CardCondition.Condition.ToString(),
 				Quantity = cardOwned.Quantity,

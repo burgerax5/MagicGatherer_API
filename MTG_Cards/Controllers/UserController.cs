@@ -23,7 +23,19 @@ namespace MTG_Cards.Controllers
 			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie) && authCookie.Split('.')[0] == username)
 			{
 				List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
-				return Ok(cardsOwned);
+				var totalCards = cardsOwned.Count();
+				var totalPrice = 0.0;
+				foreach(var card in cardsOwned)
+				{
+					totalPrice += card.Quantity * card.CardPrice;
+				}
+
+				CardOwnedResponseDTO responseDTO = new CardOwnedResponseDTO(
+					totalCards, 
+					double.Round(totalPrice, 2, MidpointRounding.AwayFromZero), 
+					cardsOwned);
+
+				return Ok(responseDTO);
 			}
 
 			return StatusCode(403);
