@@ -101,7 +101,7 @@ namespace MTG_Cards.Controllers
 				Expires = DateTime.Now.AddDays(1),
 				Secure = true,
 				HttpOnly = true,
-				SameSite = SameSiteMode.Strict
+				SameSite = SameSiteMode.None
 			};
 
 			var signature = GenerateSignature(userLoginDTO.Username);

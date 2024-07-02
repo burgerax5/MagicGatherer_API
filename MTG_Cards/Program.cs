@@ -19,6 +19,7 @@ builder.Services.AddAuthentication("auth").AddCookie("auth", options =>
     options.Cookie.Name = "auth";
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
@@ -33,16 +34,18 @@ builder.Services.AddScoped<IEditionRepository, EditionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddHttpClient();
-builder.Services.AddTransient<IScryfallAPI, ScryfallAPI>();
 
 builder.Services.AddCors(options =>
 {
-	options.AddDefaultPolicy(policy =>
-	{
-		policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
-			.AllowAnyHeader()
-			.AllowAnyOrigin(); // For localhost only. Allow all
-	});
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder
+                    .WithOrigins("http://localhost:5173")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+        });
 });
 
 var app = builder.Build();
@@ -53,7 +56,7 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.UseCors();
+app.UseCors("AllowSpecificOrigin");
 
 app.UseHttpsRedirection();
 
