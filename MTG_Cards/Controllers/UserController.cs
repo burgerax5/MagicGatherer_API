@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using MTG_Cards.DTOs;
 using MTG_Cards.Interfaces;
 using MTG_Cards.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -18,72 +22,60 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpGet("cards/{username}")]
+		[Authorize]
 		public async Task<IActionResult> GetUserCards(string username)
 		{
-			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie) && authCookie.Split('.')[0] == username)
+			var user = User.Identity.Name;
+			if (user != username)
+				return StatusCode(403);
+
+			List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
+			var totalCards = cardsOwned.Count();
+			var totalPrice = 0.0;
+			foreach (var card in cardsOwned)
 			{
-				List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
-				var totalCards = cardsOwned.Count();
-				var totalPrice = 0.0;
-				foreach(var card in cardsOwned)
-				{
-					totalPrice += card.Quantity * card.CardPrice;
-				}
-
-				CardOwnedResponseDTO responseDTO = new CardOwnedResponseDTO(
-					totalCards, 
-					double.Round(totalPrice, 2, MidpointRounding.AwayFromZero), 
-					cardsOwned);
-
-				return Ok(responseDTO);
+				totalPrice += card.Quantity * card.CardPrice;
 			}
 
-			return StatusCode(403);
+			CardOwnedResponseDTO responseDTO = new CardOwnedResponseDTO(
+				totalCards,
+				double.Round(totalPrice, 2, MidpointRounding.AwayFromZero),
+				cardsOwned);
+
+			return Ok(responseDTO);
 		}
 
 		[HttpPost("cards")]
+		[Authorize]
 		public async Task<IActionResult> AddCardToUser([FromBody] CreateCardOwnedDTO cardToAdd)
 		{
-			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie))
-			{
-				var username = authCookie.Split('.')[0];
-				var user = _repository.GetUserByUsername(username);
-				var isSuccess = await _repository.AddUserCard(user, cardToAdd);
-				if (isSuccess) return Ok("Successfully added cards to collection");
-				return BadRequest("Something went wrong while trying to add card to collection");
-			}
-
-			return StatusCode(403);
+			var username = User.Identity.Name;
+			var user = _repository.GetUserByUsername(username);
+			var isSuccess = await _repository.AddUserCard(user, cardToAdd);
+			if (isSuccess) return Ok("Successfully added cards to collection");
+			return BadRequest("Something went wrong while trying to add card to collection");
 		}
 
 		[HttpPut("cards/{id}")]
+		[Authorize]
 		public async Task<IActionResult> UpdateUserCard(int id, [FromBody] UpdateCardOwnedDTO updatedCardDetails)
 		{
-			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie))
-			{
-				var username = authCookie.Split('.')[0];
-				var user = _repository.GetUserByUsername(username);
-				var isSuccess = await _repository.UpdateUserCard(user, id, updatedCardDetails);
-				if (isSuccess) return Ok("Successfully updated card in collection");
-				return BadRequest("Something went wrong while trying to update card in collection");
-			}
-
-			return StatusCode(403);
+			var username = User.Identity.Name;
+			var user = _repository.GetUserByUsername(username);
+			var isSuccess = await _repository.UpdateUserCard(user, id, updatedCardDetails);
+			if (isSuccess) return Ok("Successfully updated card in collection");
+			return BadRequest("Something went wrong while trying to update card in collection");
 		}
 
 		[HttpDelete("cards/{id}")]
+		[Authorize]
 		public async Task<IActionResult> DeleteUserCard(int id)
 		{
-			if (Request.Cookies.TryGetValue("auth", out var authCookie) && VerifyCookie(authCookie))
-			{
-				var username = authCookie.Split('.')[0];
-				var user = _repository.GetUserByUsername(username);
-				var isSuccess = await _repository.DeleteUserCard(user, id);
-				if (isSuccess) return Ok("Successfully removed card from collection");
-				return BadRequest("Card is not in your collection");
-			}
-
-			return StatusCode(403);
+			var username = User.Identity.Name;
+			var user = _repository.GetUserByUsername(username);
+			var isSuccess = await _repository.DeleteUserCard(user, id);
+			if (isSuccess) return Ok("Successfully removed card from collection");
+			return BadRequest("Card is not in your collection");
 		}
 
 		[HttpPost("login")]
@@ -96,18 +88,8 @@ namespace MTG_Cards.Controllers
 			if (!successfulLogin)
 				return BadRequest("Invalid user credentials");
 
-			var cookieOptions = new CookieOptions
-			{
-				Expires = DateTime.Now.AddDays(1),
-				Secure = true,
-				HttpOnly = true,
-				SameSite = SameSiteMode.None
-			};
-
-			var signature = GenerateSignature(userLoginDTO.Username);
-
-			Response.Cookies.Append("auth", $"{userLoginDTO.Username}.{signature}", cookieOptions);
-			return Ok("Successfully logged in");
+			var token = GenerateJwtToken(userLoginDTO.Username);
+			return Ok(new { token });
 		}
 
 		[HttpPost("register")]
@@ -126,32 +108,27 @@ namespace MTG_Cards.Controllers
 		[HttpPost("logout")]
 		public IActionResult LogoutUser()
 		{
-			Response.Cookies.Delete("auth");
+			// No need to handle anything here since we are using JWT
 			return Ok("Logged out successfully");
 		}
 
-		private bool VerifyCookie(string signedCookie)
-		{
-			var parts = signedCookie.Split('.');
-			if (parts.Length != 2) return false;
-
-			var data = parts[0];
-			var receivedSignature = parts[1];
-
-			var expectedSignature = GenerateSignature(data);
-			return receivedSignature == expectedSignature;
-		}
-
-		private string GenerateSignature(string username)
+		private string GenerateJwtToken(string username)
 		{
 			DotNetEnv.Env.Load();
-			var secretKey = Environment.GetEnvironmentVariable("SECRET_KEY");
-
-			using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))
+			var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY"));
+			var tokenDescriptor = new SecurityTokenDescriptor
 			{
-				var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(username));
-				return Convert.ToBase64String(hash);
-			}
+				Subject = new ClaimsIdentity(new[]
+				{
+					new Claim(ClaimTypes.Name, username)
+				}),
+				Expires = DateTime.UtcNow.AddDays(1),
+				SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+			};
+
+			var tokenHandler = new JwtSecurityTokenHandler();
+			var token = tokenHandler.CreateToken(tokenDescriptor);
+			return tokenHandler.WriteToken(token);
 		}
 	}
 }
