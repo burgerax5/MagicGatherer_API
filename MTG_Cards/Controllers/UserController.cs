@@ -105,13 +105,6 @@ namespace MTG_Cards.Controllers
 			return Ok("Successfully registered: " + userDTO.Username);
 		}
 
-		[HttpPost("logout")]
-		public IActionResult LogoutUser()
-		{
-			// No need to handle anything here since we are using JWT
-			return Ok("Logged out successfully");
-		}
-
 		private string GenerateJwtToken(string username)
 		{
 			DotNetEnv.Env.Load();
