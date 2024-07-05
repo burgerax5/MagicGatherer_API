@@ -35,7 +35,7 @@ namespace MTG_Cards.Repositories
 				List<EditionDropdownDTO> editionDTOs = new List<EditionDropdownDTO>();
 				foreach (Edition edition in editions)
 				{
-					editionDTOs.Add(new EditionDropdownDTO(edition.Name, edition.Code));
+					editionDTOs.Add(new EditionDropdownDTO(edition.Id, edition.Name, edition.Code));
 				}
 
                 await _distributedCache.SetStringAsync(
