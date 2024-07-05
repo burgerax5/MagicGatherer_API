@@ -38,11 +38,10 @@ namespace MTG_Cards.Repositories
 					editionDTOs.Add(new EditionDropdownDTO(edition.Id, edition.Name, edition.Code));
 				}
 
-                await _distributedCache.SetStringAsync(
+				await _distributedCache.SetStringAsync(
                     key,
                     JsonConvert.SerializeObject(editionDTOs),
-                    cancellationToken
-                    );
+                    cancellationToken);
 
                 return editionDTOs;
 			}

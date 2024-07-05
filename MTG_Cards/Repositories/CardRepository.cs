@@ -41,11 +41,6 @@ namespace MTG_Cards.Repositories
 
 				List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
 
-				var cacheOptions = new DistributedCacheEntryOptions
-				{
-					AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) // Set cache expiration time
-				};
-
 				await _distributedCache.SetStringAsync(key, JsonConvert.SerializeObject(cardsDTO), cacheOptions, cancellationToken);
 
 				return cardsDTO;
@@ -125,7 +120,7 @@ namespace MTG_Cards.Repositories
                 if (card == null) return null;
 
                 var cardDTO = CardMapper.ToDTO(card);
-                await _distributedCache.SetStringAsync(
+				await _distributedCache.SetStringAsync(
                     key,
                     JsonConvert.SerializeObject(cardDTO),
                     cancellationToken);
