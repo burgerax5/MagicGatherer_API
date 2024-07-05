@@ -19,10 +19,14 @@ namespace MTG_Cards.Controllers
 		}
 
         [HttpGet]
-        public async Task<IActionResult> GetCards([FromQuery] int page=1) // 50 cards per page
+        public async Task<IActionResult> GetCards(
+            [FromQuery] int page=1,
+            [FromQuery] string? search=null,
+            [FromQuery] int? editionId=null,
+            [FromQuery] string? sortBy=null) // 50 cards per page
         {
             if (page <= 0) return BadRequest("Invalid page");
-            return Ok(await _repository.GetCards(page-1));
+            return Ok(await _repository.GetCards(page-1, search, editionId, sortBy));
         }
 
         [HttpGet("{id}")]

@@ -21,7 +21,7 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public async Task<List<CardDTO>> GetCards(int page)
+        public async Task<List<CardDTO>> GetCards(int page, string? search, int? editionId, string? sortBy)
         {
             string key = $"all_cards_page_{page}";
 			CancellationToken cancellationToken = default;
@@ -32,12 +32,14 @@ namespace MTG_Cards.Repositories
 
             if (string.IsNullOrEmpty(cachedCards))
             {
-				List<Card> cards = await _context.Cards
-				.Skip(page * 50)
-				.Take(50)
-				.Include(c => c.Edition)
-				.Include(c => c.Conditions)
-				.ToListAsync();
+                var query = ApplyCardFilters(search, editionId, sortBy);
+
+				List<Card> cards = await query
+				    .Skip(page * 50)
+				    .Take(50)
+				    .Include(c => c.Edition)
+				    .Include(c => c.Conditions)
+				    .ToListAsync();
 
 				List<CardDTO> cardsDTO = new List<CardDTO>();
 				foreach (Card card in cards)
@@ -54,7 +56,55 @@ namespace MTG_Cards.Repositories
                 return cardsDTO;
 			}
 
-            return JsonConvert.DeserializeObject<List<CardDTO>>(cachedCards);
+            var deserializedCards = JsonConvert.DeserializeObject<List<CardDTO>>(cachedCards);
+            return deserializedCards != null ? deserializedCards : new List<CardDTO>();
+        }
+
+        private IQueryable<Card> ApplyCardFilters(string? search, int? editionId, string? sortBy)
+        {
+            IQueryable<Card> query = _context.Cards;
+
+            if (search != null)
+                query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
+
+            if (editionId != null)
+                query = query.Where(c => c.EditionId == editionId.Value);
+
+            switch(sortBy)
+            {
+                case "name_asc":
+                    query = query.OrderBy(c => c.Name);
+                    break;
+
+                case "name_desc":
+                    query = query.OrderByDescending(c => c.Name);
+                    break;
+
+                case "price_asc":
+                    query = query.OrderBy(c => c.Conditions.FirstOrDefault(cond => cond.Condition == Condition.NM).Price);
+                    break;
+
+                case "price_desc":
+					query = query.OrderByDescending(c => c.Conditions.FirstOrDefault(cond => cond.Condition == Condition.NM).Price);
+					break;
+
+                case "rarity_asc":
+                    query = query.OrderBy(c => c.Rarity);
+                    break;
+
+                case "rarity_desc":
+                    query = query.OrderByDescending(c => c.Rarity);
+                    break;
+
+                case "hide_foils":
+                    query = query.Where(c => c.IsFoil == false);
+                    break;
+
+                default:
+                    break;
+            }
+
+            return query;
         }
 
         public async Task<CardDTO?> GetCardById(int id)
