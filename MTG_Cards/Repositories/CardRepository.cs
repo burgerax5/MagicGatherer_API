@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using MTG_Cards.Data;
 using MTG_Cards.DTOs;
@@ -7,6 +6,7 @@ using MTG_Cards.Interfaces;
 using MTG_Cards.Models;
 using MTG_Cards.Services.Mappers;
 using Newtonsoft.Json;
+using MTG_Cards.Services;
 
 namespace MTG_Cards.Repositories
 {
@@ -24,11 +24,10 @@ namespace MTG_Cards.Repositories
         public async Task<List<CardDTO>> GetCards(int page, string? search, int? editionId, string? sortBy)
         {
             string key = GenerateCacheKey(page, search, editionId, sortBy);
-			CancellationToken cancellationToken = default;
 
-			string? cachedCards = await _distributedCache.GetStringAsync(key, cancellationToken);
+			var cachedCards = await Cache.GetCacheEntry<List<CardDTO>>(_distributedCache, key);
 
-            if (string.IsNullOrEmpty(cachedCards))
+            if (cachedCards == null)
             {
                 var query = ApplyCardFilters(search, editionId, sortBy);
 
@@ -41,13 +40,12 @@ namespace MTG_Cards.Repositories
 
 				List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
 
-				await _distributedCache.SetStringAsync(key, JsonConvert.SerializeObject(cardsDTO), cacheOptions, cancellationToken);
+				await Cache.SetCacheEntry(_distributedCache, key, cardsDTO);
 
 				return cardsDTO;
 			}
 
-            var deserializedCards = JsonConvert.DeserializeObject<List<CardDTO>>(cachedCards);
-            return deserializedCards != null ? deserializedCards : new List<CardDTO>();
+            return cachedCards;
         }
 
         private IQueryable<Card> ApplyCardFilters(string? search, int? editionId, string? sortBy)
@@ -104,13 +102,10 @@ namespace MTG_Cards.Repositories
         public async Task<CardDTO?> GetCardById(int id)
         {
             string key = $"cards-{id}";
-			CancellationToken cancellationToken = default;
 
-			string? cachedCard = await _distributedCache.GetStringAsync(
-				key,
-				cancellationToken);
+			var cachedCard = await Cache.GetCacheEntry<CardDTO?>(_distributedCache, key);
 
-            if (string.IsNullOrEmpty(cachedCard))
+            if (cachedCard == null)
             {
 				var card = await _context.Cards
 				        .Include(c => c.Edition)
@@ -120,16 +115,12 @@ namespace MTG_Cards.Repositories
                 if (card == null) return null;
 
                 var cardDTO = CardMapper.ToDTO(card);
-				await _distributedCache.SetStringAsync(
-                    key,
-                    JsonConvert.SerializeObject(cardDTO),
-                    cancellationToken);
+				await Cache.SetCacheEntry(_distributedCache, key, cardDTO);
 
                 return cardDTO;
 			}
 
-			var deserializedCard = JsonConvert.DeserializeObject<CardDTO>(cachedCard);
-            return deserializedCard;
+            return cachedCard;
         }
     }
 }
