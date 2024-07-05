@@ -87,41 +87,5 @@ namespace MTG_Cards.Repositories
 			var deserializedCard = JsonConvert.DeserializeObject<CardDTO>(cachedCard);
             return deserializedCard;
         }
-
-   //     public async Task<List<CardDTO>> GetCardsByName(string name)
-   //     {
-   //         string normalizedName = name.ToLower().Trim();
-   //         string key = $"cards-search-{normalizedName}";
-			//CancellationToken cancellationToken = default;
-
-			//string? cachedCards = await _distributedCache.GetStringAsync(
-			//	key,
-			//	cancellationToken);
-
-   //         if (string.IsNullOrEmpty(cachedCards))
-   //         {
-   //             var cards = await _context.Cards
-	  //              .Include(c => c.Edition)
-	  //              .Include(c => c.Conditions)
-	  //              .Where(cards => cards.Name.Contains(name))
-   //                 .ToListAsync();
-
-			//	List<CardDTO> cardDTOs = new List<CardDTO>();
-   //             foreach (var card in cards)
-   //             {
-   //                 cardDTOs.Add(CardMapper.ToDTO(card));
-   //             }
-
-   //             await _distributedCache.SetStringAsync(
-   //                 key,
-   //                 JsonConvert.SerializeObject(cardDTOs),
-   //                 cancellationToken);
-
-   //             return cardDTOs;
-			//}
-
-            var deserializedCards = JsonConvert.DeserializeObject<List<CardDTO>>(cachedCards);
-            return deserializedCards;
-        }
     }
 }

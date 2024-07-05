@@ -7,6 +7,5 @@ namespace MTG_Cards.Interfaces
     {
         Task<List<CardDTO>> GetCards(int page);
 		Task<CardDTO?> GetCardById(int id);
-        Task<List<CardDTO>> GetCardsByName(string name);
     }
 }
