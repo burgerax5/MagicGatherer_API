@@ -36,15 +36,15 @@ namespace MTG_Cards.Controllers
             return Ok(cardDTO);
         }
 
-        [HttpGet("search")]
-        public async Task<IActionResult> GetCardsByName([FromQuery] string name)
-        {
-			List<CardDTO> cards = await _repository.GetCardsByName(name);
+   //     [HttpGet("search")]
+   //     public async Task<IActionResult> GetCardsByName([FromQuery] string name)
+   //     {
+			//List<CardDTO> cards = await _repository.GetCardsByName(name);
 
-            if (cards.Count == 0)
-                return NotFound("No card with the name: " + name);
+   //         if (cards.Count == 0)
+   //             return NotFound("No card with the name: " + name);
 
-			return Ok(cards);
-        }
+			//return Ok(cards);
+   //     }
     }
 }

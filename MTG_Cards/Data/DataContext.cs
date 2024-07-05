@@ -26,10 +26,6 @@ namespace MTG_Cards.Data
             modelBuilder.Entity<CardCondition>()
                 .Property(c => c.Condition)
                 .HasConversion<string>();
-
-			modelBuilder.Entity<Card>()
-	            .Property(c => c.Rarity)
-	            .HasConversion<string>();
 		}
     }
 }
