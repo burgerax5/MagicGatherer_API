@@ -7,6 +7,5 @@ namespace MTG_Cards.Interfaces
     {
         Task<List<EditionDropdownDTO>> GetEditionNames();
         Task<EditionDTO?> GetEditionById(int id);
-        Edition? GetEditionByName(string name);
     }
 }

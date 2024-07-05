@@ -4,6 +4,7 @@ using MTG_Cards.Data;
 using MTG_Cards.DTOs;
 using MTG_Cards.Interfaces;
 using MTG_Cards.Models;
+using MTG_Cards.Services;
 using MTG_Cards.Services.Mappers;
 using Newtonsoft.Json;
 
@@ -23,47 +24,30 @@ namespace MTG_Cards.Repositories
         public async Task<List<EditionDropdownDTO>> GetEditionNames()
         {
             string key = "edition_names";
-            CancellationToken cancellationToken = default;
 
-            string? cachedEditions = await _distributedCache.GetStringAsync(
-                key,
-                cancellationToken);
+            await _distributedCache.RemoveAsync(key);
+            var cachedEditions = await Cache.GetCacheEntry<List<EditionDropdownDTO>?>(_distributedCache, key);
 
-            if (string.IsNullOrEmpty(cachedEditions)) 
+            if (cachedEditions == null) 
             {
-				ICollection<Edition> editions = _context.Editions.ToList();
-				List<EditionDropdownDTO> editionDTOs = new List<EditionDropdownDTO>();
-				foreach (Edition edition in editions)
-				{
-					editionDTOs.Add(new EditionDropdownDTO(edition.Id, edition.Name, edition.Code));
-				}
+				List<Edition> editions = await _context.Editions.ToListAsync();
+                List<EditionDropdownDTO> editionDTOs = editions.Select(edition => EditionMapper.ToDropdownDTO(edition)).ToList();
 
-				await _distributedCache.SetStringAsync(
-                    key,
-                    JsonConvert.SerializeObject(editionDTOs),
-                    cancellationToken);
+                await Cache.SetCacheEntry(_distributedCache, key, editionDTOs);
 
                 return editionDTOs;
 			}
 
-            var deserializedEditionDTOs = JsonConvert.DeserializeObject<List<EditionDropdownDTO>>(cachedEditions);
-            if (deserializedEditionDTOs == null) return [];
-
-			return deserializedEditionDTOs;
+			return cachedEditions;
         }
 
         public async Task<EditionDTO?> GetEditionById(int id)
         {
             string key = $"edition-{id}";
-            CancellationToken cancellationToken = default;
 
-            string? cachedEdition = await _distributedCache.GetStringAsync(
-                key,
-                cancellationToken);
-            EditionDTO? editionDTO;
+            var cachedEdition = await Cache.GetCacheEntry<EditionDTO?>(_distributedCache, key);
 
-            // Cache Miss
-            if (string.IsNullOrEmpty(cachedEdition))
+            if (cachedEdition == null)
             {
 				var edition = await _context.Editions
 				        .Include(e => e.Cards)
@@ -71,24 +55,14 @@ namespace MTG_Cards.Repositories
 				        .FirstOrDefaultAsync(e => e.Id == id);
 
                 if (edition == null) return null;
-                editionDTO = EditionMapper.ToDTO(edition);
+                var editionDTO = EditionMapper.ToDTO(edition);
 
-				await _distributedCache.SetStringAsync(
-                    key, 
-                    JsonConvert.SerializeObject(editionDTO),
-                    cancellationToken);
+                await Cache.SetCacheEntry(_distributedCache, key, editionDTO);
 
 				return editionDTO;
 			}
 
-            // Cache Hit
-            editionDTO = JsonConvert.DeserializeObject<EditionDTO>(cachedEdition);
-            return editionDTO;
-        }
-
-        public Edition? GetEditionByName(string name)
-        {
-            return _context.Editions.FirstOrDefault(e => e.Name == name);
+            return cachedEdition;
         }
     }
 }

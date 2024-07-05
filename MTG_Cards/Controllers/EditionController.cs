@@ -58,16 +58,5 @@ namespace MTG_Cards.Controllers
 
 			return Ok(editionDTO);
         }
-
-
-
-        [HttpGet("search")]
-        public IActionResult GetEditionByName(string name)
-        {
-            var edition = _repository.GetEditionByName(name);
-            if (edition == null) 
-                return NotFound("No edition with the name: " + name);
-			return Ok(edition);
-        }
     }
 }
