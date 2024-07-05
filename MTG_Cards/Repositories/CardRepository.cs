@@ -23,7 +23,7 @@ namespace MTG_Cards.Repositories
 
         public async Task<List<CardDTO>> GetCards(int page, string? search, int? editionId, string? sortBy)
         {
-            string key = $"all_cards_page_{page}";
+            string key = GenerateCacheKey(page, search, editionId, sortBy);
 			CancellationToken cancellationToken = default;
 
 			string? cachedCards = await _distributedCache.GetStringAsync(key, cancellationToken);
@@ -100,6 +100,11 @@ namespace MTG_Cards.Repositories
 
 			return query;
         }
+
+		public string GenerateCacheKey(int page, string? search, int? editionId, string? sortBy)
+		{
+			return $"cards_page_{page}_search_{search ?? "none"}_edition_{editionId?.ToString() ?? "none"}_sort_{sortBy ?? "none"}";
+		}
 
         public async Task<CardDTO?> GetCardById(int id)
         {
