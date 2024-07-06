@@ -34,8 +34,6 @@ namespace MTG_Cards.Repositories
 				List<Card> cards = await query
 				    .Skip(page * 50)
 				    .Take(50)
-				    .Include(c => c.Edition)
-				    .Include(c => c.Conditions)
 				    .ToListAsync();
 
 				List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
@@ -50,7 +48,9 @@ namespace MTG_Cards.Repositories
 
         private IQueryable<Card> ApplyCardFilters(string? search, int? editionId, string? sortBy)
         {
-            IQueryable<Card> query = _context.Cards;
+            IQueryable<Card> query = _context.Cards
+				.Include(c => c.Edition)
+				.Include(c => c.Conditions);
 
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
