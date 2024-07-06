@@ -49,6 +49,7 @@ namespace MTG_Cards.Repositories
         private IQueryable<Card> ApplyCardFilters(string? search, int? editionId, string? sortBy)
         {
             IQueryable<Card> query = _context.Cards
+				.AsNoTracking()
 				.Include(c => c.Edition)
 				.Include(c => c.Conditions);
 
@@ -67,16 +68,10 @@ namespace MTG_Cards.Repositories
 					query = query.OrderByDescending(c => c.Name);
 					break;
 				case "price_asc":
-					query = query.OrderBy(c => c.Conditions
-						.Where(cond => cond.Condition == Condition.NM)
-						.Select(cond => cond.Price)
-						.FirstOrDefault());
+					query = query.OrderBy(c => c.NMPrice);
 					break;
 				case "price_desc":
-					query = query.OrderByDescending(c => c.Conditions
-						.Where(cond => cond.Condition == Condition.NM)
-						.Select(cond => cond.Price)
-						.FirstOrDefault());
+					query = query.OrderByDescending(c => c.NMPrice);
 					break;
 				case "rarity_asc":
 					query = query.OrderBy(c => c.Rarity);

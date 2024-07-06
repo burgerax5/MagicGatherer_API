@@ -22,5 +22,6 @@ namespace MTG_Cards.Models
 		public Rarity Rarity { get; set; }
 		public List<CardCondition> Conditions { get; set; } = new List<CardCondition>();
         public bool IsFoil { get; set; }
+		public double NMPrice {  get; set; }
     }
 }

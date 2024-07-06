@@ -30,16 +30,16 @@ namespace MTG_Cards.Services.Mappers
 			{
 				Id = card.Id,
 				EditionName = card.Edition.Name,
+				EditionCode = card.Edition.Code,
 				Name = card.Name,
 				ImageURL = card.ImageURL,
-				CardConditions = new List<CardConditionDTO>(),
-				IsFoil = card.IsFoil
+				CardConditions = card.Conditions.Select(cond => new CardConditionDTO(
+					cond.Condition.ToString(),
+					cond.Price,
+					cond.Quantity)).ToList(),
+				IsFoil = card.IsFoil,
+				NMPrice = card.NMPrice,
 			};
-
-			foreach (CardCondition cardCondition in card.Conditions)
-			{
-				cardDTO.CardConditions.Add(CardConditionMapper.ToDTO(cardCondition));
-			}
 
 			return cardDTO;
 		}
