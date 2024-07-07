@@ -21,29 +21,32 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public async Task<List<CardDTO>> GetCards(int page, string? search, int? editionId, string? sortBy)
+        public async Task<CardPageDTO> GetCards(int page, string? search, int? editionId, string? sortBy)
         {
             string key = GenerateCacheKey(page, search, editionId, sortBy);
 
-			var cachedCards = await Cache.GetCacheEntry<List<CardDTO>>(_distributedCache, key);
+			await _distributedCache.RemoveAsync(key);
+			var cachedCards = await Cache.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
 
             if (cachedCards == null)
             {
                 var query = ApplyCardFilters(search, editionId, sortBy);
+				var numResults = query.Count();
 
 				List<Card> cards = await query
-				    .Skip(page * 50)
-				    .Take(50)
-				    .ToListAsync();
+					.Skip(page * 50)
+					.Take(50)
+					.ToListAsync();
 
 				List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
+				CardPageDTO cardPageDTO = new CardPageDTO(page + 1, (int) Math.Ceiling(numResults / 50.0), numResults, cardsDTO);
 
-				await Cache.SetCacheEntry(_distributedCache, key, cardsDTO);
+				await Cache.SetCacheEntry(_distributedCache, key, cardPageDTO);
 
-				return cardsDTO;
+				return cardPageDTO;
 			}
 
-            return cachedCards;
+            return cachedCards.Value;
         }
 
         private IQueryable<Card> ApplyCardFilters(string? search, int? editionId, string? sortBy)
