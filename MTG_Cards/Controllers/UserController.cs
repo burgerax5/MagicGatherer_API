@@ -25,7 +25,7 @@ namespace MTG_Cards.Controllers
 		[Authorize]
 		public async Task<IActionResult> GetUserCards(string username)
 		{
-			var user = User.Identity.Name;
+			var user = User?.Identity?.Name;
 			if (user != username)
 				return StatusCode(403);
 
@@ -49,8 +49,13 @@ namespace MTG_Cards.Controllers
 		[Authorize]
 		public async Task<IActionResult> AddCardToUser([FromBody] CreateCardOwnedDTO cardToAdd)
 		{
-			var username = User.Identity.Name;
+			var username = User?.Identity?.Name;
+			if (string.IsNullOrEmpty(username))
+				return BadRequest("Username cannot be null");
+
 			var user = _repository.GetUserByUsername(username);
+			if (user == null) return BadRequest("Invalid user");
+
 			var isSuccess = await _repository.AddUserCard(user, cardToAdd);
 			if (isSuccess) return Ok("Successfully added cards to collection");
 			return BadRequest("Something went wrong while trying to add card to collection");
@@ -60,8 +65,13 @@ namespace MTG_Cards.Controllers
 		[Authorize]
 		public async Task<IActionResult> UpdateUserCard(int id, [FromBody] UpdateCardOwnedDTO updatedCardDetails)
 		{
-			var username = User.Identity.Name;
+			var username = User?.Identity?.Name;
+			if (string.IsNullOrEmpty(username))
+				return BadRequest("Username cannot be null");
+
 			var user = _repository.GetUserByUsername(username);
+			if (user == null) return BadRequest("Invalid user");
+
 			var isSuccess = await _repository.UpdateUserCard(user, id, updatedCardDetails);
 			if (isSuccess) return Ok("Successfully updated card in collection");
 			return BadRequest("Something went wrong while trying to update card in collection");
@@ -71,8 +81,13 @@ namespace MTG_Cards.Controllers
 		[Authorize]
 		public async Task<IActionResult> DeleteUserCard(int id)
 		{
-			var username = User.Identity.Name;
+			var username = User?.Identity?.Name;
+			if (string.IsNullOrEmpty(username))
+				return BadRequest("Username cannot be null");
+
 			var user = _repository.GetUserByUsername(username);
+			if (user == null) return BadRequest("Invalid user");
+
 			var isSuccess = await _repository.DeleteUserCard(user, id);
 			if (isSuccess) return Ok("Successfully removed card from collection");
 			return BadRequest("Card is not in your collection");
@@ -107,21 +122,31 @@ namespace MTG_Cards.Controllers
 
 		private string GenerateJwtToken(string username)
 		{
-			DotNetEnv.Env.Load();
-			var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY"));
-			var tokenDescriptor = new SecurityTokenDescriptor
+			try
 			{
-				Subject = new ClaimsIdentity(new[]
+				DotNetEnv.Env.Load();
+				var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+				if (secretKey == null) throw new Exception("Missing JWT_SECRET_KEY");
+
+				var keyEncoded = Encoding.ASCII.GetBytes(secretKey);
+				var tokenDescriptor = new SecurityTokenDescriptor
 				{
+					Subject = new ClaimsIdentity(new[]
+					{
 					new Claim(ClaimTypes.Name, username)
 				}),
-				Expires = DateTime.UtcNow.AddDays(1),
-				SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-			};
+					Expires = DateTime.UtcNow.AddDays(1),
+					SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyEncoded), SecurityAlgorithms.HmacSha256Signature)
+				};
 
-			var tokenHandler = new JwtSecurityTokenHandler();
-			var token = tokenHandler.CreateToken(tokenDescriptor);
-			return tokenHandler.WriteToken(token);
+				var tokenHandler = new JwtSecurityTokenHandler();
+				var token = tokenHandler.CreateToken(tokenDescriptor);
+				return tokenHandler.WriteToken(token);
+			} catch (Exception ex)
+			{
+				Console.WriteLine("Exception: " + ex.ToString());
+				return "";
+			}
 		}
 	}
 }

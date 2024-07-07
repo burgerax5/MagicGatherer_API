@@ -25,7 +25,6 @@ namespace MTG_Cards.Repositories
         {
             string key = GenerateCacheKey(page, search, editionId, sortBy);
 
-			await _distributedCache.RemoveAsync(key);
 			var cachedCards = await Cache.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
 
             if (cachedCards == null)
