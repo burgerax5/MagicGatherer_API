@@ -18,14 +18,22 @@ namespace MTG_Cards.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Edition>(entity =>
-            {
-                entity.HasIndex(e => e.Name).IsUnique();
-            });
+			modelBuilder.Entity<Edition>(entity =>
+			{
+				entity.HasIndex(e => e.Name).IsUnique();
+			});
 
-            modelBuilder.Entity<CardCondition>()
-                .Property(c => c.Condition)
-                .HasConversion<string>();
+			modelBuilder.Entity<Card>()
+				.HasIndex(c => c.Rarity)
+				.HasDatabaseName("IX_Cards_Rarity");
+
+			modelBuilder.Entity<Card>()
+				.HasIndex(c => c.NMPrice)
+				.HasDatabaseName("IX_Cards_NMPrice");
+
+			modelBuilder.Entity<CardCondition>()
+				.Property(c => c.Condition)
+				.HasConversion<string>();
 		}
     }
 }

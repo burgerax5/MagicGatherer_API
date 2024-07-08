@@ -19,7 +19,8 @@ builder.Services.AddDbContext<DataContext>(options =>
 });
 
 DotNetEnv.Env.Load();
-var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET_KEY"));
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+var key = Encoding.ASCII.GetBytes(secretKey ?? "not_so_secret_key");
 
 builder.Services.AddAuthentication(options =>
 {

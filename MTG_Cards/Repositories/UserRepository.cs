@@ -35,22 +35,12 @@ namespace MTG_Cards.Repositories
 
 		public User? GetUserById(int id)
 		{
-			return _context.Users
-				.Include(u => u.CardsOwned)
-					.ThenInclude(co => co.CardCondition)
-					.ThenInclude(cd => cd.Card)
-					.ThenInclude(c => c.Edition)
-				.FirstOrDefault(u => u.Id == id);
+			return _context.Users.FirstOrDefault(u => u.Id == id);
 		}
 
 		public User? GetUserByUsername(string username) 
 		{
-			return _context.Users
-				.Include(u => u.CardsOwned)
-					.ThenInclude(co => co.CardCondition)
-					.ThenInclude(cd => cd.Card)
-					.ThenInclude(c => c.Edition)
-				.FirstOrDefault(u => u.Username == username);
+			return _context.Users.FirstOrDefault(u => u.Username == username);
 		}
 
 		public async Task<List<CardOwnedDTO>> GetCardsOwned(string username)
@@ -68,7 +58,6 @@ namespace MTG_Cards.Repositories
 								.Include(u => u.CardsOwned)
 									.ThenInclude(co => co.CardCondition)
 									.ThenInclude(cd => cd.Card)
-									.ThenInclude(c => c.Edition)
 								.FirstOrDefault(u => u.Username == username);
 				List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
 

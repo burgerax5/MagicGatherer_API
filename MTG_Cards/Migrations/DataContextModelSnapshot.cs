@@ -16,7 +16,7 @@ namespace MTG_Cards.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.4")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -39,17 +39,25 @@ namespace MTG_Cards.Migrations
                     b.Property<bool>("IsFoil")
                         .HasColumnType("bit");
 
+                    b.Property<double>("NMPrice")
+                        .HasColumnType("float");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Rarity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Rarity")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("EditionId");
+
+                    b.HasIndex("NMPrice")
+                        .HasDatabaseName("IX_Cards_NMPrice");
+
+                    b.HasIndex("Rarity")
+                        .HasDatabaseName("IX_Cards_Rarity");
 
                     b.ToTable("Cards");
                 });
