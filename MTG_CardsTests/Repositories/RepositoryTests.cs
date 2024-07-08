@@ -68,10 +68,10 @@ namespace MTG_Cards.Repositories.Tests
 			int cardIdCounter = 1;
 			for (int i = 1; i < 204; i += 4)
 			{
-				conditions.Add(new CardCondition { Id = i, CardId = cardIdCounter, Condition = Condition.NM, Quantity = 1 });
-				conditions.Add(new CardCondition { Id = i + 1, CardId = cardIdCounter, Condition = Condition.EX, Quantity = 1 });
-				conditions.Add(new CardCondition { Id = i + 2, CardId = cardIdCounter, Condition = Condition.VG, Quantity = 1 });
-				conditions.Add(new CardCondition { Id = i + 3, CardId = cardIdCounter, Condition = Condition.G, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i, CardId = cardIdCounter, Condition = Condition.NM, Price = 4, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i + 1, CardId = cardIdCounter, Condition = Condition.EX, Price = 3, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i + 2, CardId = cardIdCounter, Condition = Condition.VG, Price = 2, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i + 3, CardId = cardIdCounter, Condition = Condition.G, Price = 1, Quantity = 1 });
 
 				cardIdCounter++;
 			}
@@ -170,48 +170,6 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual("Card 1", card1?.Name);
 			Assert.AreEqual("Card 2", card2?.Name);
 		}
-
-		//[TestMethod()]
-		//public async Task GetCardsByName_CommonSubstring()
-		//{
-		//	// Arrange
-		//	var commonSubstring = "Card";
-
-		//	// Act
-		//	var cards = await _cardRepository.GetCardsByName(commonSubstring);
-
-		//	// Assert
-		//	Assert.IsTrue(cards.Count == 51);
-		//	Assert.AreEqual("Card 1", cards[0].Name);
-		//	Assert.AreEqual("Card 51", cards[50].Name);
-		//}
-
-		//[TestMethod()]
-		//public async Task GetCardsByName_NoCardWithSubstring()
-		//{
-		//	// Arrange
-		//	var commonSubstring = "Shadow of the Erdtree";
-
-		//	// Act
-		//	var cards = await _cardRepository.GetCardsByName(commonSubstring);
-
-		//	// Assert
-		//	Assert.IsTrue(cards.Count == 0);
-		//}
-
-		//[TestMethod()]
-		//public async Task GetCardsByName_UniqueSubstring()
-		//{
-		//	// Arrange
-		//	var commonSubstring = "Card 51";
-
-		//	// Act
-		//	var cards = await _cardRepository.GetCardsByName(commonSubstring);
-
-		//	// Assert
-		//	Assert.IsTrue(cards.Count == 1);
-		//	Assert.AreEqual("Card 51", cards[0].Name);
-		//}
 
 		//[TestMethod()]
 		//public async Task GetCards_FirstPage()
