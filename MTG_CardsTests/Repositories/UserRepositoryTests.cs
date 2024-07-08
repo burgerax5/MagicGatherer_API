@@ -100,7 +100,7 @@ namespace MTG_CardsTests.Repositories
 
 			var cards = new List<Card>()
 			{
-				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions },
+				new Card { Id = 1, Name = "Card 1", ImageURL = "Image URL", Conditions = cardConditions, Rarity = Rarity.Common },
 			};
 			SetupMockDbSet(_mockCardSet!, cards.AsQueryable());
 
@@ -310,62 +310,75 @@ namespace MTG_CardsTests.Repositories
 		}
 
 
-		//[TestMethod()]
-		//public async Task GetCardsOwned_ValidUser()
-		//{
-		//	// Act
-		//	var cardsOwned = await _userRepository.GetCardsOwned("Bob");
-		//	var card = cardsOwned.FirstOrDefault();
+		// Check for invalid username is done in controller
+		[TestMethod()]
+		public async Task GetCardsOwned_ReturnsCards_AddsToCache()
+		{
+			// Act
+			var cardsOwned = await _userRepository!.GetCardsOwned("Bob");
 
-		//	// Assert
-		//	Assert.AreEqual(1, cardsOwned.Count); // I pre-populated Bob's cards owned
-		//	Assert.AreEqual("Card 1", card.CardName);
-		//	Assert.AreEqual("NM", card.Condition);
-		//}
+			// Assert
+			Assert.AreEqual(1, cardsOwned.Count); // I pre-populated Bob's cards owned
+			Assert.AreEqual("Card 1", cardsOwned[0].CardName);
+			Assert.AreEqual("NM", cardsOwned[0].Condition);
 
+			var cacheKey = "user-bob";
+			_mockCache?.Verify(c => c.GetAsync(cacheKey, default), Times.Once);
+		}
 
-		//[TestMethod()]
-		//public async Task AddCardsOwned_ValidCardCondition()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
-		//	var cardOwned = new CreateCardOwnedDTO
-		//	{
-		//		CardId = 1,
-		//		Condition = "VG",
-		//		Quantity = 1,
-		//	};
+		[TestMethod()]
+		public void GetCardsOwned_InvalidUser_NotInCache()
+		{
+			// Arrange
+			var cacheKey = "user-sam";
 
-		//	// Act
-		//	var isAddCardSuccess = await _userRepository.AddUserCard(user, cardOwned);
-		//	var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
-
-		//	// Assert
-		//	Assert.IsTrue(isAddCardSuccess);
-		//	Assert.AreEqual(2, cardsOwned.Count);
-		//}
+			// Assert
+			_mockCache?.Verify(c => c.GetAsync(cacheKey, default), Times.Never);
+		}
 
 
-		//[TestMethod()]
-		//public async Task AddCardsOwned_InvalidCardCondition()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
-		//	var cardOwned = new CreateCardOwnedDTO
-		//	{
-		//		CardId = 2,
-		//		Condition = "VG",
-		//		Quantity = 1,
-		//	};
+		[TestMethod()]
+		public async Task AddCardsOwned_ValidCardCondition()
+		{
+			// Arrange
+			var user = _context!.Users.First();
+			var cardOwned = new CreateCardOwnedDTO
+			{
+				CardId = 1,
+				Condition = "VG",
+				Quantity = 1,
+			};
 
-		//	// Act
-		//	var isAddCardSuccess = await _userRepository.AddUserCard(user, cardOwned);
-		//	var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
+			// Act
+			var isAddCardSuccess = await _userRepository!.AddUserCard(user, cardOwned);
+			var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
 
-		//	// Assert
-		//	Assert.IsFalse(isAddCardSuccess);
-		//	Assert.IsTrue(cardsOwned.Count == 1);
-		//}
+			// Assert
+			Assert.IsTrue(isAddCardSuccess);
+			Assert.AreEqual(2, cardsOwned.Count);
+		}
+
+
+		[TestMethod()]
+		public async Task AddCardsOwned_InvalidCardCondition()
+		{
+			// Arrange
+			var user = _context!.Users.First();
+			var cardOwned = new CreateCardOwnedDTO
+			{
+				CardId = 2,
+				Condition = "VG",
+				Quantity = 1,
+			};
+
+			// Act
+			var isAddCardSuccess = await _userRepository!.AddUserCard(user, cardOwned);
+			var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
+
+			// Assert
+			Assert.IsFalse(isAddCardSuccess);
+			Assert.IsTrue(cardsOwned.Count == 1);
+		}
 
 
 		//[TestMethod()]

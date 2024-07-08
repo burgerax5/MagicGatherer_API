@@ -57,7 +57,8 @@ namespace MTG_Cards.Repositories
 				var user = _context.Users
 								.Include(u => u.CardsOwned)
 									.ThenInclude(co => co.CardCondition)
-									.ThenInclude(cd => cd.Card)
+									.ThenInclude(cd => cd!.Card)
+									.ToList()
 								.FirstOrDefault(u => u.Username == username);
 				List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
 
@@ -120,7 +121,7 @@ namespace MTG_Cards.Repositories
 
 			// Make sure the user doesn't already have this card in this condition
 			var hasCardCondition = await _context.CardsOwned
-				.AnyAsync(c => c.UserId == user.Id && c.CardCondition.Condition == condition);
+				.AnyAsync(c => c.UserId == user.Id && c!.CardCondition!.Condition == condition);
 			if (hasCardCondition) return false;
 
 			CardOwned cardOwned = CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user);
