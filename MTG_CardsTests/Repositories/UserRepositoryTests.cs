@@ -53,20 +53,12 @@ namespace MTG_CardsTests.Repositories
 		}
 		private void ClearDatabase()
 		{
-			var usersInDB = _context!.Users.ToList();
-			_context.Users.RemoveRange(usersInDB);
-
-			var cardsInDB = _context.Cards.ToList();
-			_context.Cards.RemoveRange(cardsInDB);
-
-			var cardsOwnedInDB = _context.CardsOwned.ToList();
-			_context.CardsOwned.RemoveRange(cardsOwnedInDB);
-
-			var cardConditionsInDB = _context.CardConditions.ToList();
-			_context.CardConditions.RemoveRange(cardConditionsInDB);
-
-			var editionsInDB = _context.Editions.ToList();
-			_context.Editions.RemoveRange(editionsInDB);
+			_context!.Users.RemoveRange(_context.Users);
+			_context.Cards.RemoveRange(_context.Cards);
+			_context.CardsOwned.RemoveRange(_context.CardsOwned);
+			_context.CardConditions.RemoveRange(_context.CardConditions);
+			_context.Editions.RemoveRange(_context.Editions);
+			_context.SaveChanges();
 		}
 		private void SeedDatabase()
 		{
@@ -132,9 +124,6 @@ namespace MTG_CardsTests.Repositories
 			MockHttp();
 			MockDbContext();
 			MockDbSet();
-
-			// Set environment variable
-			Environment.SetEnvironmentVariable("SECRET_KEY", "super-secret-key");
 			ClearDatabase();
 			SeedDatabase();
 
@@ -341,7 +330,7 @@ namespace MTG_CardsTests.Repositories
 		public async Task AddCardsOwned_ValidCardCondition()
 		{
 			// Arrange
-			var user = _context!.Users.First();
+			var user = await _context!.Users.Include(u => u.CardsOwned).FirstAsync();
 			var cardOwned = new CreateCardOwnedDTO
 			{
 				CardId = 1,
@@ -363,7 +352,7 @@ namespace MTG_CardsTests.Repositories
 		public async Task AddCardsOwned_InvalidCardCondition()
 		{
 			// Arrange
-			var user = _context!.Users.First();
+			var user = await _context!.Users.Include(u => u.CardsOwned).FirstAsync();
 			var cardOwned = new CreateCardOwnedDTO
 			{
 				CardId = 2,
@@ -381,138 +370,119 @@ namespace MTG_CardsTests.Repositories
 		}
 
 
-		//[TestMethod()]
-		//public async Task AddCardsOwned_ExistingCardCondition_DontAdd()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
-		//	var cardOwned = new CreateCardOwnedDTO
-		//	{
-		//		CardId = 1,
-		//		Condition = "VG",
-		//		Quantity = 1,
-		//	};
+		[TestMethod()]
+		public async Task AddCardsOwned_ExistingCardCondition_DontAddTwice()
+		{
+			// Arrange
+			var user = await _context!.Users.Include(u => u.CardsOwned).FirstAsync();
+			Assert.IsNotNull(user);
+			var cardOwned = new CreateCardOwnedDTO
+			{
+				CardId = 1,
+				Condition = "VG",
+				Quantity = 1,
+			};
 
-		//	// Act
-		//	var isFirstAddSuccess = await _userRepository.AddUserCard(user, cardOwned);
-		//	var isSecondAddSuccess = await _userRepository.AddUserCard(user, cardOwned);
-		//	var cardsOwned = await _userRepository.GetCardsOwned(user.Username);
+			// Act
+			var isFirstAddSuccess = await _userRepository!.AddUserCard(user, cardOwned);
+			var isSecondAddSuccess = await _userRepository.AddUserCard(user, cardOwned);
+			var cardsOwned = await _userRepository.GetCardsOwned(user!.Username);
 
-		//	// Assert
-		//	Assert.IsTrue(isFirstAddSuccess);
-		//	Assert.IsFalse(isSecondAddSuccess);
-		//	Assert.AreEqual(2, cardsOwned.Count);
-		//}
-
-
-		//[TestMethod()]
-		//public async Task UpdateUserCard_InvalidCardId()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
-		//	UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
-
-		//	// Act
-		//	var isUpdateSuccess = await _userRepository.UpdateUserCard(user, id: 2, updateCardOwned);
-
-		//	// Assert
-		//	Assert.IsFalse(isUpdateSuccess);
-		//}
+			// Assert
+			Assert.IsTrue(isFirstAddSuccess);
+			Assert.IsFalse(isSecondAddSuccess);
+			Assert.AreEqual(2, cardsOwned.Count);
+		}
 
 
-		//[TestMethod()]
-		//public async Task UpdateUserCard_ValidCardId_WrongUser()
-		//{
-		//	// Arrange
-		//	var user = new User { Id = 2, Username = "Speedwagon" };
-		//	UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
+		[TestMethod()]
+		public async Task UpdateUserCard_InvalidCardId()
+		{
+			// Arrange
+			var user = _context!.Users.First();
+			UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
 
-		//	// Act
-		//	var isUpdateSuccess = await _userRepository.UpdateUserCard(user, id: 1, updateCardOwned);
+			// Act
+			var isUpdateSuccess = await _userRepository!.UpdateUserCard(user, id: 2, updateCardOwned);
 
-		//	// Assert
-		//	Assert.IsFalse(isUpdateSuccess);
-		//}
-
-
-		//[TestMethod()]
-		//public async Task UpdateUserCard_Success()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
-		//	UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
-
-		//	// Act
-		//	var isUpdateSuccess = await _userRepository.UpdateUserCard(user, id: 1, updateCardOwned);
-
-		//	// Assert
-		//	Assert.IsTrue(isUpdateSuccess);
-		//}
+			// Assert
+			Assert.IsFalse(isUpdateSuccess);
+		}
 
 
-		//[TestMethod()]
-		//public async Task GetCardsOwned_InvalidUsername()
-		//{
-		//	// Act
-		//	var cardsOwned = await _userRepository.GetCardsOwned(username: "Bob");
+		[TestMethod()]
+		public async Task UpdateUserCard_ValidCardId_WrongUser()
+		{
+			// Arrange
+			var user = new User { Id = 2, Username = "Speedwagon", Password = "PW", Salt = "Salt" };
+			UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 1 };
 
-		//	// Assert
-		//	Assert.IsTrue(cardsOwned.Count == 0);
-		//}
+			// Act
+			var isUpdateSuccess = await _userRepository!.UpdateUserCard(user, id: 1, updateCardOwned);
 
-
-		//[TestMethod()]
-		//public async Task GetCardsOwned_ValidUsername()
-		//{
-		//	// Act
-		//	var cardsOwned = await _userRepository.GetCardsOwned(username: "Bob");
-
-		//	// Assert
-		//	Assert.IsTrue(cardsOwned.Count == 1);
-		//}
+			// Assert
+			Assert.IsFalse(isUpdateSuccess);
+		}
 
 
-		//[TestMethod()]
-		//public async Task DeleteUserCard_InvalidId()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
+		[TestMethod()]
+		public async Task UpdateUserCard_Success()
+		{
+			// Arrange
+			var user = await _context!.Users.Include(u => u.CardsOwned).FirstAsync();
+			UpdateCardOwnedDTO updateCardOwned = new UpdateCardOwnedDTO { Quantity = 3 };
 
-		//	// Act
-		//	var isDeleteSuccess = await _userRepository.DeleteUserCard(user, id: 2);
+			// Act
+			var isUpdateSuccess = await _userRepository!.UpdateUserCard(user, id: 1, updateCardOwned);
+			var updatedCardOwned = _context!.CardsOwned.First();
 
-		//	// Assert
-		//	Assert.IsFalse(isDeleteSuccess);
-		//}
+			// Assert
+			Assert.IsTrue(isUpdateSuccess);
+			Assert.IsNotNull(updatedCardOwned);
+			Assert.AreEqual(3, updatedCardOwned.Quantity);
+		}
+
+		[TestMethod()]
+		public async Task DeleteUserCard_InvalidId()
+		{
+			// Arrange
+			var user = await _context!.Users.Include(u => u.CardsOwned).FirstAsync();
+
+			// Act
+			var isDeleteSuccess = await _userRepository!.DeleteUserCard(user, id: 2);
+
+			// Assert
+			Assert.IsFalse(isDeleteSuccess);
+		}
 
 
-		//[TestMethod()]
-		//public async Task DeleteUserCard_ValidId_InvalidUser()
-		//{
-		//	// Arrange
-		//	var user = new User { Id = 2, Username = "Speedwagon" };
+		[TestMethod()]
+		public async Task DeleteUserCard_ValidId_InvalidUser()
+		{
+			// Arrange
+			var user = new User { Id = 2, Username = "Speedwagon", Password = "PW", Salt = "Salt" };
 
-		//	// Act
-		//	var isDeleteSuccess = await _userRepository.DeleteUserCard(user, id: 2);
+			// Act
+			var isDeleteSuccess = await _userRepository!.DeleteUserCard(user, id: 2);
 
-		//	// Assert
-		//	Assert.IsFalse(isDeleteSuccess);
-		//}
+			// Assert
+			Assert.IsFalse(isDeleteSuccess);
+		}
 
 
-		//[TestMethod()]
-		//public async Task DeleteUserCard_Success()
-		//{
-		//	// Arrange
-		//	var user = _context.Users.First();
+		[TestMethod()]
+		public async Task DeleteUserCard_Success()
+		{
+			// Arrange
+			var user = await _context!.Users.Include(u => u.CardsOwned).FirstAsync();
 
-		//	// Act
-		//	var isDeleteSuccess = await _userRepository.DeleteUserCard(user, id: 1);
-		//	var cardsOwned = await _userRepository.GetCardsOwned("Bob");
+			// Act
+			var isDeleteSuccess = await _userRepository!.DeleteUserCard(user, id: 1);
+			var cardsOwned = await _userRepository.GetCardsOwned("Bob");
 
-		//	// Assert
-		//	Assert.IsTrue(isDeleteSuccess);
-		//	Assert.IsTrue(cardsOwned.Count == 0);
-		//}
+			// Assert
+			Assert.IsTrue(isDeleteSuccess);
+			Assert.IsTrue(cardsOwned.Count == 0);
+		}
 	}
 }

@@ -147,7 +147,7 @@ namespace MTG_Cards.Repositories
 
 			// Make sure card with provided id exists
 			var cardOwned = _context.CardsOwned.Find(id);
-			if (cardOwned == null || cardOwned.User != user) return false;
+			if (cardOwned == null || cardOwned!.User!.Id != user.Id) return false;
 			
 			cardOwned.Quantity = cardToUpdate.Quantity;
 
