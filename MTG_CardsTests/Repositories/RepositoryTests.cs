@@ -1,22 +1,12 @@
-﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using MTG_Cards.Controllers;
 using MTG_Cards.Data;
-using MTG_Cards.DTOs;
 using MTG_Cards.Interfaces;
 using MTG_Cards.Models;
-using MTG_Cards.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MTG_Cards.Repositories.Tests
 {
@@ -171,40 +161,115 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual("Card 2", card2?.Name);
 		}
 
-		//[TestMethod()]
-		//public async Task GetCards_FirstPage()
-		//{
-		//	// Act
-		//	var cards = await _cardRepository.GetCards(page: 0);
+		[TestMethod()]
+		public async Task GetCards_FirstPage()
+		{
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(page: 0, null, null, null, null);
 
-		//	// Assert
-		//	Assert.IsTrue(cards.Count == 50);
-		//	Assert.AreEqual("Card 50", cards[49].Name);
-		//}
+			// Assert
+			Assert.AreEqual(2, cardPageDTO.total_pages); // Total of 2 pages
+			Assert.AreEqual(1, cardPageDTO.curr_page);  // Current page is the first page
 
-		//[TestMethod()]
-		//public async Task GetCards_LastPage()
-		//{
-		//	// Act
-		//	var cards = await _cardRepository.GetCards(page: 1);
+			var cardDTOs = cardPageDTO.CardDTOs;
+			Assert.AreEqual(51, cardPageDTO.results); // Total number of results
+			Assert.AreEqual(50, cardDTOs.Count); // Results in page
 
-		//	// Assert
-		//	Assert.IsTrue(cards.Count == 1);
-		//	Assert.AreEqual("Card 51", cards[0].Name);
-		//}
+			var firstcard = cardDTOs[0];
+			var _50thCard = cardDTOs[49];
+			Assert.AreEqual("Card 1", firstcard.Name);
+			Assert.AreEqual("Card 50", _50thCard.Name);
+		}
 
-		//// Check is done on the controller, not repository
-		//[TestMethod()]
-		//public async Task GetCards_InvalidPage()
-		//{
-		//	// Act
-		//	var actionResult = await _cardController.GetCards(page: -1);
-		//	var result = actionResult as ObjectResult;
+		[TestMethod()]
+		public async Task GetCards_LastPage()
+		{
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(page: 1, null, null, null, null);
 
-		//	// Arrange
-		//	Assert.AreEqual(StatusCodes.Status400BadRequest, result.StatusCode);
-		//	Assert.AreEqual("Invalid page", result.Value);
-		//}
+			// Assert
+			Assert.AreEqual(2, cardPageDTO.curr_page);
+
+			var cardDTOs = cardPageDTO.CardDTOs;
+			Assert.AreEqual(51, cardPageDTO.results); // Total number of results
+			Assert.AreEqual(1, cardDTOs.Count); // Results in page
+
+			var firstCard = cardDTOs[0];
+			Assert.AreEqual("Card 51", firstCard.Name);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_InvalidPage()
+		{
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(page: 2, null, null, null, null);
+
+			// Assert
+			var cardDTOs = cardPageDTO.CardDTOs;
+			Assert.AreEqual(0, cardDTOs.Count);
+		}
+
+		// Check is done on the controller, not repository
+		[TestMethod()]
+		public async Task GetCards_InvalidPageController()
+		{
+			// Act
+			var actionResult = await _cardController!.GetCards(page: -1);
+			var result = actionResult as ObjectResult;
+
+			// Assert
+			Assert.AreEqual(StatusCodes.Status400BadRequest, result!.StatusCode);
+			Assert.AreEqual("Invalid page", result.Value);
+		}
+
+		[TestMethod()]
+		public void GetCards_NotCachedResults()
+		{
+			// Arrange
+			string cacheKey = _cardRepository!.GenerateCacheKey(0, null, null, null, null);
+
+			// Assert
+			_mockCache?.Verify(c => c.GetAsync(cacheKey, default), Times.Never);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_ShouldReturnCachedResults()
+		{
+			// Arrange
+			string cacheKey = _cardRepository!.GenerateCacheKey(0, null, null, null, null);
+
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(0, null, null, null, null); // Will cache
+
+			// Assert
+			_mockCache?.Verify(c => c.GetAsync(cacheKey, default), Times.Once);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_SearchEmptyString_ReturnsAllCards()
+		{
+			// Arrange
+			var search = "";
+
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(0, search, null, null, null);
+
+			// Assert
+			Assert.AreEqual(51, cardPageDTO.results);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_SearchCommonSubstring()
+		{
+			// Arrange
+			var search = "Card 1";
+
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(0, search, null, null, null);
+
+			// Assert
+			Assert.AreEqual(11, cardPageDTO.CardDTOs.Count);
+		}
 	}
 
 	//[TestClass()]

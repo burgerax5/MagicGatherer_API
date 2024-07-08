@@ -7,5 +7,7 @@ namespace MTG_Cards.Interfaces
     {
         Task<CardPageDTO> GetCards(int page, string? search, int? editionId, string? sortBy, string? foilFilter);
 		Task<CardDTO?> GetCardById(int id);
-    }
+		string GenerateCacheKey(int page, string? search, int? editionId, string? sortBy, string? foilFilter);
+
+	}
 }
