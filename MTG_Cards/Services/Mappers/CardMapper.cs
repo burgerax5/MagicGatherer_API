@@ -29,7 +29,7 @@ namespace MTG_Cards.Services.Mappers
 			CardDTO cardDTO = new CardDTO()
 			{
 				Id = card.Id,
-				EditionName = card.Edition.Name,
+				EditionName = card!.Edition!.Name,
 				EditionCode = card.Edition.Code,
 				Name = card.Name,
 				ImageURL = card.ImageURL,
@@ -39,6 +39,7 @@ namespace MTG_Cards.Services.Mappers
 					cond.Quantity)).ToList(),
 				IsFoil = card.IsFoil,
 				NMPrice = card.NMPrice,
+				Rarity = card.Rarity
 			};
 
 			return cardDTO;

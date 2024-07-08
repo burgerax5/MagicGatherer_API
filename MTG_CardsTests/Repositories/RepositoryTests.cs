@@ -58,10 +58,10 @@ namespace MTG_Cards.Repositories.Tests
 			int cardIdCounter = 1;
 			for (int i = 1; i < 204; i += 4)
 			{
-				conditions.Add(new CardCondition { Id = i, CardId = cardIdCounter, Condition = Condition.NM, Price = 4, Quantity = 1 });
-				conditions.Add(new CardCondition { Id = i + 1, CardId = cardIdCounter, Condition = Condition.EX, Price = 3, Quantity = 1 });
-				conditions.Add(new CardCondition { Id = i + 2, CardId = cardIdCounter, Condition = Condition.VG, Price = 2, Quantity = 1 });
-				conditions.Add(new CardCondition { Id = i + 3, CardId = cardIdCounter, Condition = Condition.G, Price = 1, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i, CardId = cardIdCounter, Condition = Condition.NM, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i + 1, CardId = cardIdCounter, Condition = Condition.EX, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i + 2, CardId = cardIdCounter, Condition = Condition.VG, Quantity = 1 });
+				conditions.Add(new CardCondition { Id = i + 3, CardId = cardIdCounter, Condition = Condition.G, Quantity = 1 });
 
 				cardIdCounter++;
 			}
@@ -72,7 +72,14 @@ namespace MTG_Cards.Repositories.Tests
 			var cards = new List<Card>();
 			for (int i = 0; i < 51; i++)
 			{
-				cards.Add(new Card { Id = i + 1, Name = $"Card {i + 1}", ImageURL = "Image URL", Conditions = cardConditions.Slice(i * 4, 4) });
+				cards.Add(new Card { 
+					Id = i + 1, 
+					Name = $"Card {i + 1}", 
+					ImageURL = "Image URL", 
+					Conditions = cardConditions.Slice(i * 4, 4), 
+					NMPrice = i,
+					Rarity = i % 2 == 0 ? Rarity.Mythic_Rare : Rarity.Common,
+				});
 			}
 			return cards;
 		}
@@ -268,7 +275,91 @@ namespace MTG_Cards.Repositories.Tests
 			var cardPageDTO = await _cardRepository!.GetCards(0, search, null, null, null);
 
 			// Assert
-			Assert.AreEqual(11, cardPageDTO.CardDTOs.Count);
+			Assert.AreEqual(11, cardPageDTO.results);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_SearchDistinctSubstring()
+		{
+			// Arrange
+			var search = "NO CARD SHOULD HAVE THIS NAME!";
+
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(0, search, null, null, null);
+
+			// Assert
+			Assert.AreEqual(0, cardPageDTO.results);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_ValidEditionId()
+		{
+			// Arrange
+			var editionId = 1;
+
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(0, null, editionId, null, null);
+
+			// Assert
+			Assert.AreEqual(51, cardPageDTO.results);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_InvalidEditionId()
+		{
+			// Arrange
+			var editionId = 2;
+
+			// Act
+			var cardPageDTO = await _cardRepository!.GetCards(0, null, editionId, null, null);
+
+			// Assert
+			Assert.AreEqual(0, cardPageDTO.results);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_SortByName()
+		{
+			// Act
+			var sortByNameAscending = await _cardRepository!.GetCards(1, null, null, "name_asc", null);
+			var sortByNameDescending = await _cardRepository!.GetCards(1, null, null, "name_desc", null);
+
+			// Assert
+			var lastCardNameAscending = sortByNameAscending.CardDTOs.First().Name;
+			Assert.AreEqual("Card 9", lastCardNameAscending);
+
+			var lastCardnameDescending = sortByNameDescending.CardDTOs.First().Name;
+			Assert.AreEqual("Card 1", lastCardnameDescending);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_SortByPrice()
+		{
+			// Act
+			var sortByPriceAscending = await _cardRepository!.GetCards(0, null, null, "price_asc", null);
+			var sortByPriceDescending = await _cardRepository!.GetCards(0, null, null, "price_desc", null);
+
+			// Assert
+			var cheapestCard = sortByPriceAscending.CardDTOs.First();
+			Assert.AreEqual(0, cheapestCard.NMPrice);
+
+			var mostExpensiveCard = sortByPriceDescending.CardDTOs.First();
+			Assert.AreEqual(50, mostExpensiveCard.NMPrice);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_SortByRarity()
+		{
+			// Act
+			var sortByRarityAscending = await _cardRepository!.GetCards(0, null, null, "rarity_asc", null);
+			var sortByRarityDescending = await _cardRepository!.GetCards(0, null, null, "rarity_desc", null);
+
+			// Assert
+			var lowestRarity = sortByRarityAscending.CardDTOs.First();
+			Assert.AreEqual(Rarity.Common, lowestRarity.Rarity);
+
+			var highestRarity = sortByRarityDescending.CardDTOs.First();
+			Assert.AreEqual(Rarity.Mythic_Rare, highestRarity.Rarity);
 		}
 	}
 
