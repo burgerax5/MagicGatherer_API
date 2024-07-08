@@ -8,11 +8,6 @@ using MTG_Cards.Data;
 using MTG_Cards.DTOs;
 using MTG_Cards.Models;
 using MTG_Cards.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MTG_CardsTests.Repositories
 {
@@ -32,15 +27,12 @@ namespace MTG_CardsTests.Repositories
 		private UserController? _userController;
 		private Mock<HttpContext>? _mockHttpContext;
 		private Mock<HttpResponse>? _mockHttpResponse;
-		private Mock<IResponseCookies>? _mockResponseCookies;
 
 		private void MockHttp()
 		{
 			_mockHttpContext = new Mock<HttpContext>();
 			_mockHttpResponse = new Mock<HttpResponse>();
-			_mockResponseCookies = new Mock<IResponseCookies>();
 
-			_mockHttpResponse.Setup(r => r.Cookies).Returns(_mockResponseCookies.Object);
 			_mockHttpContext.Setup(c => c.Response).Returns(_mockHttpResponse.Object);
 		}
 		private void MockDbContext()
@@ -81,7 +73,11 @@ namespace MTG_CardsTests.Repositories
 			// Set up user
 			var users = new List<User>()
 			{
-				new User { Id = 1, Username = "Bob", Password = "Bob's Password", Salt = "Salt" }
+				new User { 
+					Id = 1, 
+					Username = "Bob", 
+					Password = "/T8mzUQsyZVetbsJ5sdzIbJpaN2Aip/gQop6gK4CU/A=", 
+					Salt = "buTrO8xGUypUedC4t7lV6w==" }
 			};
 			SetupMockDbSet(_mockUserSet!, users.AsQueryable());
 
@@ -202,7 +198,6 @@ namespace MTG_CardsTests.Repositories
 			Assert.IsNotNull(result);
 			Assert.AreEqual(1, result.Id);
 			Assert.AreEqual("Bob", result.Username);
-			Assert.AreEqual("Bob's Password", result.Password);
 		}
 
 
@@ -220,115 +215,99 @@ namespace MTG_CardsTests.Repositories
 		}
 
 
-		//[TestMethod()]
-		//public void RegisterUser_Success()
-		//{
-		//	// Arrange
-		//	UserLoginDTO userLoginDTO = new UserLoginDTO
-		//	{
-		//		Username = "Sam",
-		//		Password = "Sam's Password"
-		//	};
+		[TestMethod()]
+		public void RegisterUser_Success()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
 
-		//	// Act
-		//	_userRepository.RegisterUser(userLoginDTO);
-		//	var userSam = _userRepository.GetUserByUsername("Sam");
+			// Act
+			_userRepository!.RegisterUser(userLoginDTO);
+			var userSam = _userRepository.GetUserByUsername("Sam");
 
-		//	// Assert
-		//	Assert.IsNotNull(userSam);
-		//	Assert.AreEqual("Sam", userSam.Username);
-		//}
+			// Assert
+			Assert.IsNotNull(userSam);
+			Assert.AreEqual("Sam", userSam.Username);
+		}
 
-		//[TestMethod()]
-		//public void RegisterUser_UserAlreadyExists()
-		//{
-		//	// Arrange
-		//	UserLoginDTO userLoginDTO = new UserLoginDTO
-		//	{
-		//		Username = "Sam",
-		//		Password = "Sam's Password"
-		//	};
+		[TestMethod()]
+		public void RegisterUser_UserAlreadyExists()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
 
-		//	// Act
-		//	var samActionResult1 = _userController.RegisterUser(userLoginDTO);
-		//	var samActionResult2 = _userController.RegisterUser(userLoginDTO); // Registering Sam again
-		//	var result1 = samActionResult1 as ObjectResult;
-		//	var result2 = samActionResult2 as ObjectResult;
+			// Act
+			var samActionResult1 = _userController!.RegisterUser(userLoginDTO);
+			var samActionResult2 = _userController.RegisterUser(userLoginDTO); // Registering Sam again
+			var result1 = samActionResult1 as ObjectResult;
+			var result2 = samActionResult2 as ObjectResult;
 
-		//	// Assert
-		//	Assert.AreEqual(StatusCodes.Status200OK, result1.StatusCode);
-		//	Assert.AreEqual(StatusCodes.Status400BadRequest, result2.StatusCode);
-		//}
-
-
-		//[TestMethod()]
-		//public void LoginUser_Success()
-		//{
-		//	// Arrange
-		//	UserLoginDTO userLoginDTO = new UserLoginDTO
-		//	{
-		//		Username = "Sam",
-		//		Password = "Sam's Password"
-		//	};
-
-		//	// Act
-		//	var registerActionResult = _userController.RegisterUser(userLoginDTO);
-		//	var loginActionResult = _userController.LoginUser(userLoginDTO);
-		//	var loginResult = loginActionResult as ObjectResult;
-
-		//	// Assert
-		//	Assert.AreEqual(StatusCodes.Status200OK, loginResult.StatusCode);
-		//	Assert.AreEqual("Successfully logged in", loginResult.Value);
-
-		//	// Verify cookie was set
-		//	_mockResponseCookies.Verify(
-		//		c => c.Append(
-		//			"auth",
-		//			It.Is<string>(s => s.StartsWith("Sam.")),
-		//			It.IsAny<CookieOptions>()),
-		//			Times.Once
-		//		);
-		//}
+			// Assert
+			Assert.AreEqual(StatusCodes.Status200OK, result1?.StatusCode);
+			Assert.AreEqual(StatusCodes.Status400BadRequest, result2?.StatusCode);
+		}
 
 
-		//[TestMethod()]
-		//public void LoginUser_UserNotFound()
-		//{
-		//	// Arrange
-		//	UserLoginDTO userLoginDTO = new UserLoginDTO
-		//	{
-		//		Username = "Sam",
-		//		Password = "Sam's Password"
-		//	};
+		[TestMethod()]
+		public void LoginUser_Success()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Bob",
+				Password = "bruh"
+			};
 
-		//	// Act
-		//	var loginActionResult = _userController.LoginUser(userLoginDTO);
-		//	var loginResult = loginActionResult as ObjectResult;
+			// Act
+			var loginSuccess = _userRepository!.LoginUser(userLoginDTO);
 
-		//	// Assert
-		//	Assert.AreEqual(StatusCodes.Status404NotFound, loginResult.StatusCode);
-		//	Assert.AreEqual("User not found", loginResult.Value);
-		//}
+			// Assert
+			Assert.IsTrue(loginSuccess);
+		}
 
 
-		//[TestMethod()]
-		//public void LoginUser_InvalidPassword()
-		//{
-		//	// Arrange
-		//	UserLoginDTO userLoginDTO = new UserLoginDTO
-		//	{
-		//		Username = "Bob",
-		//		Password = "Bob's Password" // Stored password is not hashed, but the login attempt hashes password
-		//	};
+		[TestMethod()]
+		public void LoginUser_UserNotFound()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Sam",
+				Password = "Sam's Password"
+			};
 
-		//	// Act
-		//	var loginActionResult = _userController.LoginUser(userLoginDTO);
-		//	var loginResult = loginActionResult as ObjectResult;
+			// Act
+			var loginSuccess = _userRepository!.LoginUser(userLoginDTO);
 
-		//	// Assert
-		//	Assert.AreEqual(StatusCodes.Status400BadRequest, loginResult.StatusCode);
-		//	Assert.AreEqual("Invalid user credentials", loginResult.Value);
-		//}
+			// Assert
+			Assert.IsFalse(loginSuccess);
+		}
+
+
+		[TestMethod()]
+		public void LoginUser_InvalidPassword()
+		{
+			// Arrange
+			UserLoginDTO userLoginDTO = new UserLoginDTO
+			{
+				Username = "Bob",
+				Password = "Incorrect Password"
+			};
+
+			// Act
+			var loginSuccess = _userRepository!.LoginUser(userLoginDTO);
+
+			// Assert
+			Assert.IsFalse(loginSuccess);
+		}
 
 
 		//[TestMethod()]
