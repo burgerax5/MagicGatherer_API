@@ -79,6 +79,7 @@ namespace MTG_Cards.Repositories.Tests
 					Conditions = cardConditions.Slice(i * 4, 4), 
 					NMPrice = i,
 					Rarity = i % 2 == 0 ? Rarity.Mythic_Rare : Rarity.Common,
+					IsFoil = i > 40
 				});
 			}
 			return cards;
@@ -360,6 +361,18 @@ namespace MTG_Cards.Repositories.Tests
 
 			var highestRarity = sortByRarityDescending.CardDTOs.First();
 			Assert.AreEqual(Rarity.Mythic_Rare, highestRarity.Rarity);
+		}
+
+		[TestMethod()]
+		public async Task GetCards_FoilFilter()
+		{
+			// Act
+			var foilsOnly = await _cardRepository!.GetCards(0, null, null, null, "foils_only");
+			var hideFoils = await _cardRepository!.GetCards(0, null, null, null, "hide_foils");
+
+			// Assert
+			Assert.AreEqual(10, foilsOnly.results); // 10 foils
+			Assert.AreEqual(41, hideFoils.results); // 41 non-foils
 		}
 	}
 
