@@ -123,5 +123,16 @@ namespace MTG_CardsTests.Repositories
 			Assert.AreEqual("Edition Name", edition?.Name);
 			Assert.IsTrue(edition?.Cards.Count == 1);
 		}
+
+		[TestMethod()]
+		public async Task GetEditionsDropdown_ReturnsValid()
+		{
+			// Act
+			List<EditionDropdownDTO> dropdown = await _editionRepository!.GetEditionsDropdown();
+
+			// Assert
+			Assert.AreEqual("Edition Name", dropdown[0].Name);
+			Assert.AreEqual(1, dropdown[0].Value);
+		}
 	}
 }
