@@ -12,14 +12,8 @@ namespace MTG_Cards.Services.Mappers
 				Edition = edition,
 				Name = cardDTO.Name,
 				ImageURL = cardDTO.ImageURL,
-				Conditions = new List<CardCondition>(),
 				IsFoil = cardDTO.IsFoil
 			};
-
-			foreach (CardConditionDTO cardConditionDTO in cardDTO.CardConditions)
-			{
-				card.Conditions.Add(CardConditionMapper.ToModel(card, cardConditionDTO));
-			}
 
 			return card;
 		}
@@ -33,16 +27,22 @@ namespace MTG_Cards.Services.Mappers
 				EditionCode = card.Edition.Code,
 				Name = card.Name,
 				ImageURL = card.ImageURL,
-				CardConditions = card.Conditions.Select(cond => new CardConditionDTO(
-					cond.Condition.ToString(),
-					cond.Price,
-					cond.Quantity)).ToList(),
 				IsFoil = card.IsFoil,
 				NMPrice = card.NMPrice,
 				Rarity = card.Rarity
 			};
 
 			return cardDTO;
+		}
+
+		public static CardDetailedDTO ToDetailedDTO(Card card)
+		{
+			CardDTO cardDTO = ToDTO(card);
+			//List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
+			List< CardConditionDTO> cardConditionDTO = card.Conditions.Select(condition => CardConditionMapper.ToDTO(condition)).ToList();
+
+			CardDetailedDTO cardDetailedDTO = new CardDetailedDTO(cardDTO, cardConditionDTO);
+			return cardDetailedDTO;
 		}
 	}
 }

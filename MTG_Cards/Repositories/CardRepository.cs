@@ -50,10 +50,9 @@ namespace MTG_Cards.Repositories
 
         private IQueryable<Card> ApplyCardFilters(string? search, int? editionId, string? sortBy, string? foilFilter)
         {
-            IQueryable<Card> query = _context.Cards
+			IQueryable<Card> query = _context.Cards
 				.AsNoTracking()
-				.Include(c => c.Edition)
-				.Include(c => c.Conditions);
+				.Include(c => c.Edition);
 
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
@@ -105,11 +104,11 @@ namespace MTG_Cards.Repositories
 			return $"cards_page_{page}_search_{search ?? "none"}_edition_{editionId?.ToString() ?? "none"}_sort_{sortBy ?? "none"}_foilFilter_{foilFilter ?? "none"}";
 		}
 
-        public async Task<CardDTO?> GetCardById(int id)
+        public async Task<CardDetailedDTO?> GetCardById(int id)
         {
             string key = $"cards-{id}";
 
-			var cachedCard = await Cache.GetCacheEntry<CardDTO?>(_distributedCache, key);
+			var cachedCard = await Cache.GetCacheEntry<CardDetailedDTO?>(_distributedCache, key);
 
             if (cachedCard == null)
             {
@@ -120,7 +119,7 @@ namespace MTG_Cards.Repositories
 
                 if (card == null) return null;
 
-                var cardDTO = CardMapper.ToDTO(card);
+                var cardDTO = CardMapper.ToDetailedDTO(card);
 				await Cache.SetCacheEntry(_distributedCache, key, cardDTO);
 
                 return cardDTO;

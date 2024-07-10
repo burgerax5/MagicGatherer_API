@@ -33,7 +33,7 @@ namespace MTG_Cards.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCardById(int id)
         {
-            CardDTO? cardDTO = await _repository.GetCardById(id);
+            CardDetailedDTO? cardDTO = await _repository.GetCardById(id);
 
             if (cardDTO == null)
                 return NotFound("No card with the id: " + id);
