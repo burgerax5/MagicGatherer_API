@@ -5,7 +5,7 @@ namespace MTG_Cards.DTOs
 	public record struct CardDTO(
 		int Id,
 		string EditionName,
-		string EditionCode,
+		int EditionId,
 		Rarity Rarity,
 		string Name,
 		string ImageURL,

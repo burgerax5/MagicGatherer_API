@@ -24,7 +24,7 @@ namespace MTG_Cards.Services.Mappers
 			{
 				Id = card.Id,
 				EditionName = card!.Edition!.Name,
-				EditionCode = card.Edition.Code,
+				EditionId = card!.Edition!.Id,
 				Name = card.Name,
 				ImageURL = card.ImageURL,
 				IsFoil = card.IsFoil,
