@@ -58,6 +58,7 @@ namespace MTG_Cards.Repositories
 								.Include(u => u.CardsOwned)
 									.ThenInclude(co => co.CardCondition)
 									.ThenInclude(cd => cd!.Card)
+									.ThenInclude(c => c!.Edition)
 									.ToList()
 								.FirstOrDefault(u => u.Username == username);
 				List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
