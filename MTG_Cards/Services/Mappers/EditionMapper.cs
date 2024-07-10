@@ -23,13 +23,22 @@ namespace MTG_Cards.Services.Mappers
 			return editionDTO;
 		}
 
-		public static EditionDropdownDTO ToDropdownDTO(Edition edition)
+		public static EditionNameDTO ToGroupedDTO(Edition edition)
 		{
-			return new EditionDropdownDTO
+			return new EditionNameDTO
 			{
 				EditionId = edition.Id,
 				Code = edition.Code,
 				Name = edition.Name,
+			};
+		}
+
+		public static EditionDropdownDTO ToDropdownDTO(Edition edition)
+		{
+			return new EditionDropdownDTO
+			{
+				Name = edition.Name,
+				Value = edition.Id
 			};
 		}
 	}

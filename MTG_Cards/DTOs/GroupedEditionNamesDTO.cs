@@ -2,6 +2,6 @@
 {
 	public record struct GroupedEditionNames(
 		char header,
-		List<EditionDropdownDTO> editions
+		List<EditionNameDTO> editions
 		);
 }

@@ -21,17 +21,16 @@ namespace MTG_Cards.Repositories
             _distributedCache = distributedCache;
         }
 
-        public async Task<List<EditionDropdownDTO>> GetEditionNames()
+        public async Task<List<EditionNameDTO>> GetEditionNames()
         {
             string key = "edition_names";
 
-            await _distributedCache.RemoveAsync(key);
-            var cachedEditions = await Cache.GetCacheEntry<List<EditionDropdownDTO>?>(_distributedCache, key);
+            var cachedEditions = await Cache.GetCacheEntry<List<EditionNameDTO>?>(_distributedCache, key);
 
             if (cachedEditions == null) 
             {
 				List<Edition> editions = await _context.Editions.ToListAsync();
-                List<EditionDropdownDTO> editionDTOs = editions.Select(edition => EditionMapper.ToDropdownDTO(edition)).ToList();
+                List<EditionNameDTO> editionDTOs = editions.Select(edition => EditionMapper.ToGroupedDTO(edition)).ToList();
 
                 await Cache.SetCacheEntry(_distributedCache, key, editionDTOs);
 
@@ -40,6 +39,25 @@ namespace MTG_Cards.Repositories
 
 			return cachedEditions;
         }
+
+        public async Task<List<EditionDropdownDTO>> GetEditionsDropdown()
+        {
+            string key = "editions_dropdown";
+            var cachedEditionDropdown = await Cache.GetCacheEntry<List<EditionDropdownDTO>?>(_distributedCache, key);
+
+            if (cachedEditionDropdown == null)
+            {
+				List<Edition> editions = await _context.Editions.ToListAsync();
+				List<EditionDropdownDTO> editionsDropdown = editions.Select(edition => EditionMapper.ToDropdownDTO(edition)).ToList();
+
+				await Cache.SetCacheEntry(_distributedCache, key, editionsDropdown);
+
+				return editionsDropdown;
+			}
+
+            return cachedEditionDropdown;
+
+		}
 
         public async Task<EditionDTO?> GetEditionById(int id)
         {

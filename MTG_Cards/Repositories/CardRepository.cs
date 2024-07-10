@@ -69,6 +69,8 @@ namespace MTG_Cards.Repositories
 				case "hide_foils":
 					query = query.Where(c => !c.IsFoil);
 					break;
+				default:
+					break;
 			}
 
 			switch (sortBy)
@@ -90,6 +92,8 @@ namespace MTG_Cards.Repositories
 					break;
 				case "rarity_desc":
 					query = query.OrderByDescending(c => c.Rarity);
+					break;
+				default:
 					break;
 			}
 

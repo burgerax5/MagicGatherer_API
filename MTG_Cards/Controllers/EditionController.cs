@@ -33,7 +33,7 @@ namespace MTG_Cards.Controllers
             {
                 groupedEditions.Add(new GroupedEditionNames { 
                     header = group,
-                    editions = new List<EditionDropdownDTO>()
+                    editions = new List<EditionNameDTO>()
                 });
             }
 
@@ -47,6 +47,12 @@ namespace MTG_Cards.Controllers
             }
 
             return Ok(groupedEditions);
+        }
+
+        [HttpGet("dropdown")]
+        public async Task<IActionResult> GetEditionsDropdown()
+        {
+            return Ok(await _repository.GetEditionsDropdown());
         }
 
         [HttpGet("{id}")]
