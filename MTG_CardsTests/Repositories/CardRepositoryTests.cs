@@ -165,8 +165,8 @@ namespace MTG_Cards.Repositories.Tests
 			// Assert
 			Assert.IsNotNull(card1);
 			Assert.IsNotNull(card2);
-			Assert.AreEqual("Card 1", card1?.Name);
-			Assert.AreEqual("Card 2", card2?.Name);
+			Assert.AreEqual("Card 1", card1?.cardDTO.Name);
+			Assert.AreEqual("Card 2", card2?.cardDTO.Name);
 		}
 
 		[TestMethod()]
