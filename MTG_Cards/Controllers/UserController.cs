@@ -22,13 +22,8 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpGet("cards/{username}")]
-		[Authorize]
 		public async Task<IActionResult> GetUserCards(string username)
 		{
-			var user = User?.Identity?.Name;
-			if (user != username)
-				return StatusCode(403);
-
 			List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
 			var totalCards = cardsOwned.Count();
 			var totalPrice = 0.0;

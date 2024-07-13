@@ -29,20 +29,29 @@ namespace MTG_Cards.Repositories
 
             if (cachedCards == null)
             {
-                var query = ApplyCardFilters(search, editionId, sortBy, foilFilter);
-				var numResults = query.Count();
+				try
+				{
+					var query = ApplyCardFilters(search, editionId, sortBy, foilFilter);
+					var numResults = await query.CountAsync(); // Note: await added to CountAsync()
 
-				List<Card> cards = await query
-					.Skip(page * 50)
-					.Take(50)
-					.ToListAsync();
+					List<Card> cards = await query
+						.Skip(page * 50)
+						.Take(50)
+						.ToListAsync();
 
-				List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
-				CardPageDTO cardPageDTO = new CardPageDTO(page + 1, (int) Math.Ceiling(numResults / 50.0), numResults, cardsDTO);
+					List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
+					CardPageDTO cardPageDTO = new CardPageDTO(page + 1, (int)Math.Ceiling(numResults / 50.0), numResults, cardsDTO);
 
-				await Cache.SetCacheEntry(_distributedCache, key, cardPageDTO);
+					await Cache.SetCacheEntry(_distributedCache, key, cardPageDTO);
 
-				return cardPageDTO;
+					return cardPageDTO;
+				}
+				catch (Exception ex)
+				{
+					// Log the exception
+					Console.WriteLine($"Error in GetCards: {ex.Message}");
+					throw; // Re-throw the exception after logging
+				}
 			}
 
             return cachedCards.Value;
@@ -59,7 +68,7 @@ namespace MTG_Cards.Repositories
 
             if (editionId.HasValue)
                 query = query.Where(c => c.EditionId == editionId.Value);
-			
+
 			switch (foilFilter)
 			{
 				case "foils_only":

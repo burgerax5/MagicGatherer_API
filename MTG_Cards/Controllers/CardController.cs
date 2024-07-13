@@ -27,7 +27,14 @@ namespace MTG_Cards.Controllers
             [FromQuery] string? foilFilter=null) // 50 cards per page
         {
             if (page <= 0) return BadRequest("Invalid page");
-            return Ok(await _repository.GetCards(page-1, search, editionId, sortBy, foilFilter));
+            try
+            {
+				var cardPageDTO = await _repository.GetCards(page - 1, search, editionId, sortBy, foilFilter);
+				return Ok(cardPageDTO);
+			} catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpGet("{id}")]
