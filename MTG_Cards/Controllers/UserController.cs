@@ -24,6 +24,10 @@ namespace MTG_Cards.Controllers
 		[HttpGet("cards/{username}")]
 		public async Task<IActionResult> GetUserCards(string username)
 		{
+			var userExists = _repository.UserExists(username);
+			if (!userExists)
+				return NotFound($"User: {username} not found");
+
 			List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
 			var totalCards = cardsOwned.Count();
 			var totalPrice = 0.0;
