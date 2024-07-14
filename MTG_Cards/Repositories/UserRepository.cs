@@ -171,6 +171,17 @@ namespace MTG_Cards.Repositories
 			return Save();
 		}
 
+		public async Task<List<CreateCardOwnedDTO>> GetCardConditions(string username, int cardId)
+		{
+			return await _context.CardsOwned
+				.Include(co => co.User)
+				.Where(co => co!.User!.Username == username && co!.CardCondition!.CardId == cardId)
+				.Include(co => co.CardCondition) // Include CardCondition for eager loading
+				.Include(co => co!.CardCondition!.Card) // Include Card for eager loading
+				.Select(co => CardOwnedMapper.ToDTO(co.CardCondition!))
+				.ToListAsync();
+		}
+
 		public async Task<bool> AddUserCard(User user, CreateCardOwnedDTO cardToAdd)
 		{
 			string key = $"user-{user.Username.ToLower()}";

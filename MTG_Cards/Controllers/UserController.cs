@@ -45,6 +45,18 @@ namespace MTG_Cards.Controllers
 			return Ok(cardsOwnedPage);
 		}
 
+		[HttpGet("cards/conditions/{cardId}")]
+		[Authorize]
+		public async Task<IActionResult> GetUserCardsConditionsOwned(int cardId)
+		{
+			var username = User?.Identity?.Name;
+			if (string.IsNullOrEmpty(username))
+				return BadRequest("Username cannot be null");
+
+			var conditions = await _repository.GetCardConditions(username, cardId);
+			return Ok(conditions);
+		}
+
 		[HttpPost("cards")]
 		[Authorize]
 		public async Task<IActionResult> AddCardToUser([FromBody] CreateCardOwnedDTO cardToAdd)

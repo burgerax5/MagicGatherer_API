@@ -16,5 +16,17 @@ namespace MTG_Cards.Services.Mappers
 
 			return cardOwned;
 		}
+
+		public static CreateCardOwnedDTO ToDTO(CardCondition cardCondition)
+		{
+			CreateCardOwnedDTO cardOwnedDTO = new CreateCardOwnedDTO()
+			{
+				CardId = cardCondition.CardId,
+				Condition = cardCondition.Condition.ToString(),
+				Quantity = cardCondition.Quantity,
+			};
+
+			return cardOwnedDTO;
+		}
 	}
 }
