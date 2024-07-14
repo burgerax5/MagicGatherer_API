@@ -34,15 +34,15 @@ namespace MTG_Cards.Controllers
 			if (!userExists)
 				return NotFound($"User: {username} not found");
 
-			CardPageDTO cardsOwned = await _repository.GetCardsOwned(username, page - 1, search, editionId, sortBy, foilFilter);
+			CardPageDTO cardsPageDTO = await _repository.GetCardsOwned(username, page - 1, search, editionId, sortBy, foilFilter);
+			(int totalCards, double totalValue) = await _repository.GetTotalCardsAndValue(username);
 
+			CardsOwnedPageDTO cardsOwnedPage = new CardsOwnedPageDTO(
+				totalCards,
+				double.Round(totalValue, 2, MidpointRounding.AwayFromZero),
+				cardsPageDTO);
 
-			//CardOwnedResponseDTO responseDTO = new CardOwnedResponseDTO(
-			//	totalCards,
-			//	double.Round(totalPrice, 2, MidpointRounding.AwayFromZero),
-			//	cardsOwned);
-
-			return Ok(cardsOwned);
+			return Ok(cardsOwnedPage);
 		}
 
 		[HttpPost("cards")]

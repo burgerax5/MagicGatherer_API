@@ -83,22 +83,11 @@ namespace MTG_Cards.Repositories
 
 		private IQueryable<Card> ApplyCardFilters(string username, string? search, int? editionId, string? sortBy, string? foilFilter)
 		{
-			IQueryable<Card> query;
-
-			if (!string.IsNullOrEmpty(username))
-			{
-				query = _context.Users
+			IQueryable<Card> query = _context.Users
 					.Where(u => u.Username == username)
 					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Card!))
 					.AsNoTracking()
 					.Include(c => c.Edition);
-			}
-			else
-			{
-				query = _context.Cards
-					.AsNoTracking()
-					.Include(c => c.Edition);
-			}
 
 			if (!string.IsNullOrEmpty(search))
 				query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
@@ -148,6 +137,19 @@ namespace MTG_Cards.Repositories
 		public string GenerateCacheKey(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter)
 		{
 			return $"user_{username}_cards_page_{page}_search_{search ?? "none"}_edition_{editionId?.ToString() ?? "none"}_sort_{sortBy ?? "none"}_foilFilter_{foilFilter ?? "none"}";
+		}
+
+		public async Task<(int totalCards, double totalValue)> GetTotalCardsAndValue(string username)
+		{
+			IQueryable<CardCondition> query = _context.Users
+					.Where(u => u.Username == username)
+					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!))
+					.AsNoTracking();
+
+			int totalCards = await query.CountAsync();
+			double totalValue = await query.Select(cd => cd.Price).SumAsync();
+
+			return (totalCards, totalValue);
 		}
 
 		public bool LoginUser(UserLoginDTO userDTO)
