@@ -14,6 +14,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Threading;
+using MTG_Cards.Services;
 
 namespace MTG_Cards.Repositories
 {
@@ -43,42 +44,110 @@ namespace MTG_Cards.Repositories
 			return _context.Users.FirstOrDefault(u => u.Username == username);
 		}
 
-		public async Task<List<CardOwnedDTO>> GetCardsOwned(string username)
+
+		public async Task<CardPageDTO> GetCardsOwned(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter)
 		{
-			string key = $"user-{username.ToLower()}";
-			CancellationToken cancellationToken = default;
+			string key = GenerateCacheKey(username, page, search, editionId, sortBy, foilFilter);
 
-			string? cachedCards = await _distributedCache.GetStringAsync(
-				key,
-				cancellationToken);
+			var cachedCards = await Cache.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
 
-			if (string.IsNullOrEmpty(cachedCards))
+			if (cachedCards == null)
 			{
-				var user = _context.Users
-								.Include(u => u.CardsOwned)
-									.ThenInclude(co => co.CardCondition)
-									.ThenInclude(cd => cd!.Card)
-									.ThenInclude(c => c!.Edition)
-									.ToList()
-								.FirstOrDefault(u => u.Username == username);
-				List<CardOwnedDTO> cardsOwnedDTO = new List<CardOwnedDTO>();
+				try
+				{
+					var query = ApplyCardFilters(username, search, editionId, sortBy, foilFilter);
+					var numResults = await query.CountAsync();
 
-				if (user == null) return cardsOwnedDTO;
+					List<Card> cards = await query
+						.Skip(page * 50)
+						.Take(50)
+						.ToListAsync();
 
-				foreach (CardOwned cardOwned in user.CardsOwned)
-					cardsOwnedDTO.Add(CardOwnedMapper.ToDTO(cardOwned));
+					List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
+					CardPageDTO cardPageDTO = new CardPageDTO(page + 1, (int)Math.Ceiling(numResults / 50.0), numResults, cardsDTO);
 
-				await _distributedCache.SetStringAsync(
-					key,
-					JsonConvert.SerializeObject(cardsOwnedDTO),
-					cancellationToken);
+					await Cache.SetCacheEntry(_distributedCache, key, cardPageDTO);
 
-				return cardsOwnedDTO;
+					return cardPageDTO;
+				}
+				catch (Exception ex)
+				{
+					// Log the exception
+					Console.WriteLine($"Error in GetCardsOwned: {ex.Message}");
+					throw; // Re-throw the exception after logging
+				}
 			}
 
-			var deserializedCards = JsonConvert.DeserializeObject<List<CardOwnedDTO>>(cachedCards);
-			if (deserializedCards == null) deserializedCards = [];
-			return deserializedCards;
+			return cachedCards.Value;
+		}
+
+		private IQueryable<Card> ApplyCardFilters(string username, string? search, int? editionId, string? sortBy, string? foilFilter)
+		{
+			IQueryable<Card> query;
+
+			if (!string.IsNullOrEmpty(username))
+			{
+				query = _context.Users
+					.Where(u => u.Username == username)
+					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Card!))
+					.AsNoTracking()
+					.Include(c => c.Edition);
+			}
+			else
+			{
+				query = _context.Cards
+					.AsNoTracking()
+					.Include(c => c.Edition);
+			}
+
+			if (!string.IsNullOrEmpty(search))
+				query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
+
+			if (editionId.HasValue)
+				query = query.Where(c => c.EditionId == editionId.Value);
+
+			switch (foilFilter)
+			{
+				case "foils_only":
+					query = query.Where(c => c.IsFoil);
+					break;
+				case "hide_foils":
+					query = query.Where(c => !c.IsFoil);
+					break;
+				default:
+					break;
+			}
+
+			switch (sortBy)
+			{
+				case "name_asc":
+					query = query.OrderBy(c => c.Name);
+					break;
+				case "name_desc":
+					query = query.OrderByDescending(c => c.Name);
+					break;
+				case "price_asc":
+					query = query.OrderBy(c => c.NMPrice);
+					break;
+				case "price_desc":
+					query = query.OrderByDescending(c => c.NMPrice);
+					break;
+				case "rarity_asc":
+					query = query.OrderBy(c => c.Rarity);
+					break;
+				case "rarity_desc":
+					query = query.OrderByDescending(c => c.Rarity);
+					break;
+				default:
+					break;
+			}
+
+			return query;
+		}
+
+		public string GenerateCacheKey(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter)
+		{
+			return $"user_{username}_cards_page_{page}_search_{search ?? "none"}_edition_{editionId?.ToString() ?? "none"}_sort_{sortBy ?? "none"}_foilFilter_{foilFilter ?? "none"}";
 		}
 
 		public bool LoginUser(UserLoginDTO userDTO)

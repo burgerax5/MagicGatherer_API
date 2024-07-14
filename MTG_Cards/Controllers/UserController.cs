@@ -22,26 +22,27 @@ namespace MTG_Cards.Controllers
 		}
 
 		[HttpGet("cards/{username}")]
-		public async Task<IActionResult> GetUserCards(string username)
+		public async Task<IActionResult> GetUserCards(
+			string username,
+			[FromQuery] int page = 1,
+			[FromQuery] string? search = null,
+			[FromQuery] int? editionId = null,
+			[FromQuery] string? sortBy = null,
+			[FromQuery] string? foilFilter = null)
 		{
 			var userExists = _repository.UserExists(username);
 			if (!userExists)
 				return NotFound($"User: {username} not found");
 
-			List<CardOwnedDTO> cardsOwned = await _repository.GetCardsOwned(username);
-			var totalCards = cardsOwned.Count();
-			var totalPrice = 0.0;
-			foreach (var card in cardsOwned)
-			{
-				totalPrice += card.Quantity * card.CardPrice;
-			}
+			CardPageDTO cardsOwned = await _repository.GetCardsOwned(username, page - 1, search, editionId, sortBy, foilFilter);
 
-			CardOwnedResponseDTO responseDTO = new CardOwnedResponseDTO(
-				totalCards,
-				double.Round(totalPrice, 2, MidpointRounding.AwayFromZero),
-				cardsOwned);
 
-			return Ok(responseDTO);
+			//CardOwnedResponseDTO responseDTO = new CardOwnedResponseDTO(
+			//	totalCards,
+			//	double.Round(totalPrice, 2, MidpointRounding.AwayFromZero),
+			//	cardsOwned);
+
+			return Ok(cardsOwned);
 		}
 
 		[HttpPost("cards")]

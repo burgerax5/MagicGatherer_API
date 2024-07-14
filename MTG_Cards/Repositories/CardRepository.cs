@@ -32,7 +32,7 @@ namespace MTG_Cards.Repositories
 				try
 				{
 					var query = ApplyCardFilters(search, editionId, sortBy, foilFilter);
-					var numResults = await query.CountAsync(); // Note: await added to CountAsync()
+					var numResults = await query.CountAsync();
 
 					List<Card> cards = await query
 						.Skip(page * 50)

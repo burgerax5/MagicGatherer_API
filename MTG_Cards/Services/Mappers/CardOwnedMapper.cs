@@ -16,24 +16,5 @@ namespace MTG_Cards.Services.Mappers
 
 			return cardOwned;
 		}
-
-		public static CardOwnedDTO ToDTO(CardOwned cardOwned)
-		{
-			Card card = cardOwned.CardCondition!.Card!;
-			CardOwnedDTO cardOwnedDTO = new CardOwnedDTO() 
-			{ 
-				CardId = card.Id,
-				CardName = card.Name,
-				CardImageURL = card.ImageURL,
-				CardPrice = cardOwned.CardCondition.Price,
-				EditionName = card.Edition!.Name,
-				EditionCode = card.Edition.Code,
-				CardOwnedId = cardOwned.Id,
-				Condition = cardOwned.CardCondition.Condition.ToString(),
-				Quantity = cardOwned.Quantity,
-			};
-
-			return cardOwnedDTO;
-		}
 	}
 }
