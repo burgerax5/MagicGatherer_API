@@ -178,7 +178,7 @@ namespace MTG_Cards.Repositories
 				.Where(co => co!.User!.Username == username && co!.CardCondition!.CardId == cardId)
 				.Include(co => co.CardCondition) // Include CardCondition for eager loading
 				.Include(co => co!.CardCondition!.Card) // Include Card for eager loading
-				.Select(co => CardOwnedMapper.ToDTO(co.CardCondition!))
+				.Select(co => CardOwnedMapper.ToDTO(co))
 				.ToListAsync();
 		}
 
