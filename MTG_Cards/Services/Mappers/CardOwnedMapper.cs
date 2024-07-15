@@ -17,11 +17,12 @@ namespace MTG_Cards.Services.Mappers
 			return cardOwned;
 		}
 
-		public static CreateCardOwnedDTO ToDTO(CardOwned cardOwned)
+		public static CardOwnedDTO ToDTO(CardOwned cardOwned)
 		{
 			var cardCondition = cardOwned.CardCondition;
-			CreateCardOwnedDTO cardOwnedDTO = new CreateCardOwnedDTO()
+			CardOwnedDTO cardOwnedDTO = new CardOwnedDTO()
 			{
+				Id = cardOwned.Id,
 				CardId = cardCondition!.CardId,
 				Condition = cardCondition.Condition.ToString(),
 				Quantity = cardOwned.Quantity,

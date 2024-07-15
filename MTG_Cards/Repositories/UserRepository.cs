@@ -141,13 +141,16 @@ namespace MTG_Cards.Repositories
 
 		public async Task<(int totalCards, double totalValue)> GetTotalCardsAndValue(string username)
 		{
-			IQueryable<CardCondition> query = _context.Users
+			int totalCards = await _context.Users
+				.Where(u => u.Username == username)
+				.Include(u => u.CardsOwned)
+				.SelectMany(u => u.CardsOwned.Select(co => co.Quantity)).SumAsync();
+
+			double totalValue = await _context.Users
 					.Where(u => u.Username == username)
 					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!))
-					.AsNoTracking();
-
-			int totalCards = await query.CountAsync();
-			double totalValue = await query.Select(cd => cd.Price).SumAsync();
+					.AsNoTracking()
+					.Select(cd => cd.Price).SumAsync();
 
 			return (totalCards, totalValue);
 		}
@@ -171,13 +174,13 @@ namespace MTG_Cards.Repositories
 			return Save();
 		}
 
-		public async Task<List<CreateCardOwnedDTO>> GetCardConditions(string username, int cardId)
+		public async Task<List<CardOwnedDTO>> GetCardConditions(string username, int cardId)
 		{
 			return await _context.CardsOwned
 				.Include(co => co.User)
 				.Where(co => co!.User!.Username == username && co!.CardCondition!.CardId == cardId)
-				.Include(co => co.CardCondition) // Include CardCondition for eager loading
-				.Include(co => co!.CardCondition!.Card) // Include Card for eager loading
+				.Include(co => co.CardCondition)
+				.Include(co => co!.CardCondition!.Card)
 				.Select(co => CardOwnedMapper.ToDTO(co))
 				.ToListAsync();
 		}
