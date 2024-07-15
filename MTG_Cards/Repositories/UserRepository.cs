@@ -128,6 +128,7 @@ namespace MTG_Cards.Repositories
 					query = query.OrderByDescending(c => c.Rarity);
 					break;
 				default:
+					query = query.OrderBy(c => c.Name);
 					break;
 			}
 
@@ -213,7 +214,7 @@ namespace MTG_Cards.Repositories
 
 			// Make sure the user doesn't already have this card in this condition
 			var hasCardCondition = await _context.CardsOwned
-				.AnyAsync(c => c.UserId == user.Id && c!.CardCondition!.Condition == condition);
+				.AnyAsync(c => c.UserId == user.Id && c!.CardCondition!.Id == cardCondition.Id);
 			if (hasCardCondition) return false;
 
 			CardOwned cardOwned = CardOwnedMapper.ToModel(cardCondition, cardToAdd.Quantity, user);
