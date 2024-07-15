@@ -84,10 +84,10 @@ namespace MTG_Cards.Repositories
 		private IQueryable<Card> ApplyCardFilters(string username, string? search, int? editionId, string? sortBy, string? foilFilter)
 		{
 			IQueryable<Card> query = _context.Users
-					.Where(u => u.Username == username)
-					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Card!))
-					.AsNoTracking()
-					.Include(c => c.Edition);
+				.Where(u => u.Username == username)
+				.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Card!).Distinct())
+				.Include(c => c.Edition)
+				.AsNoTracking();
 
 			if (!string.IsNullOrEmpty(search))
 				query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
@@ -141,16 +141,22 @@ namespace MTG_Cards.Repositories
 
 		public async Task<(int totalCards, double totalValue)> GetTotalCardsAndValue(string username)
 		{
-			int totalCards = await _context.Users
+			var cardQuantities = await _context.Users
 				.Where(u => u.Username == username)
 				.Include(u => u.CardsOwned)
-				.SelectMany(u => u.CardsOwned.Select(co => co.Quantity)).SumAsync();
+				.SelectMany(u => u.CardsOwned.Select(co => co.Quantity))
+				.ToListAsync();
 
-			double totalValue = await _context.Users
+			var cardValues = await _context.Users
 					.Where(u => u.Username == username)
-					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!))
-					.AsNoTracking()
-					.Select(cd => cd.Price).SumAsync();
+					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Price))
+					.ToListAsync();
+
+			int totalCards = cardQuantities.Sum();
+			double totalValue = 0;
+
+			for (int i = 0; i < cardQuantities.Count; i++)
+				totalValue += cardQuantities[i] * cardValues[i];
 
 			return (totalCards, totalValue);
 		}
