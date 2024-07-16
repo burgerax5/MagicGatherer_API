@@ -22,9 +22,9 @@ namespace MTG_Cards.Repositories
 	{
 		private readonly DataContext _context;
 		private readonly IDistributedCache _distributedCache;
-		private readonly Cache _cacheHelper;
+		private readonly ICacheHelper _cacheHelper;
 
-		public UserRepository(DataContext context, IDistributedCache distributedCache, Cache cacheHelper)
+		public UserRepository(DataContext context, IDistributedCache distributedCache, ICacheHelper cacheHelper)
 		{
 			_context = context;
 			_distributedCache = distributedCache;
@@ -51,7 +51,7 @@ namespace MTG_Cards.Repositories
 		{
 			string key = GenerateCacheKey(username, page, search, editionId, sortBy, foilFilter);
 
-			var cachedCards = await Cache.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
+			var cachedCards = await CacheHelper.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
 
 			if (cachedCards == null)
 			{
@@ -68,7 +68,7 @@ namespace MTG_Cards.Repositories
 					List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
 					CardPageDTO cardPageDTO = new CardPageDTO(page + 1, (int)Math.Ceiling(numResults / 50.0), numResults, cardsDTO);
 
-					await Cache.SetCacheEntry(_distributedCache, key, cardPageDTO);
+					await CacheHelper.SetCacheEntry(_distributedCache, key, cardPageDTO);
 
 					return cardPageDTO;
 				}

@@ -25,14 +25,14 @@ namespace MTG_Cards.Repositories
         {
             string key = "edition_names";
 
-            var cachedEditions = await Cache.GetCacheEntry<List<EditionNameDTO>?>(_distributedCache, key);
+            var cachedEditions = await CacheHelper.GetCacheEntry<List<EditionNameDTO>?>(_distributedCache, key);
 
             if (cachedEditions == null) 
             {
 				List<Edition> editions = await _context.Editions.ToListAsync();
                 List<EditionNameDTO> editionDTOs = editions.Select(edition => EditionMapper.ToGroupedDTO(edition)).ToList();
 
-                await Cache.SetCacheEntry(_distributedCache, key, editionDTOs);
+                await CacheHelper.SetCacheEntry(_distributedCache, key, editionDTOs);
 
                 return editionDTOs;
 			}
@@ -43,14 +43,14 @@ namespace MTG_Cards.Repositories
         public async Task<List<EditionDropdownDTO>> GetEditionsDropdown()
         {
             string key = "editions_dropdown";
-            var cachedEditionDropdown = await Cache.GetCacheEntry<List<EditionDropdownDTO>?>(_distributedCache, key);
+            var cachedEditionDropdown = await CacheHelper.GetCacheEntry<List<EditionDropdownDTO>?>(_distributedCache, key);
 
             if (cachedEditionDropdown == null)
             {
 				List<Edition> editions = await _context.Editions.ToListAsync();
 				List<EditionDropdownDTO> editionsDropdown = editions.Select(edition => EditionMapper.ToDropdownDTO(edition)).ToList();
 
-				await Cache.SetCacheEntry(_distributedCache, key, editionsDropdown);
+				await CacheHelper.SetCacheEntry(_distributedCache, key, editionsDropdown);
 
 				return editionsDropdown;
 			}
@@ -63,7 +63,7 @@ namespace MTG_Cards.Repositories
         {
             string key = $"edition-{id}";
 
-            var cachedEdition = await Cache.GetCacheEntry<EditionDTO?>(_distributedCache, key);
+            var cachedEdition = await CacheHelper.GetCacheEntry<EditionDTO?>(_distributedCache, key);
 
             if (cachedEdition == null)
             {
@@ -75,7 +75,7 @@ namespace MTG_Cards.Repositories
                 if (edition == null) return null;
                 var editionDTO = EditionMapper.ToDTO(edition);
 
-                await Cache.SetCacheEntry(_distributedCache, key, editionDTO);
+                await CacheHelper.SetCacheEntry(_distributedCache, key, editionDTO);
 
 				return editionDTO;
 			}

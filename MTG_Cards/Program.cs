@@ -54,7 +54,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 	return ConnectionMultiplexer.Connect(configuration!);
 });
 
-builder.Services.AddTransient<Cache>();
+builder.Services.AddTransient<ICacheHelper, CacheHelper>();
 
 builder.Services.AddScoped<ICardRepository, CardRepository>();
 builder.Services.AddScoped<IEditionRepository, EditionRepository>();

@@ -25,7 +25,7 @@ namespace MTG_Cards.Repositories
         {
             string key = GenerateCacheKey(page, search, editionId, sortBy, foilFilter);
 
-			var cachedCards = await Cache.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
+			var cachedCards = await CacheHelper.GetCacheEntry<CardPageDTO?>(_distributedCache, key);
 
             if (cachedCards == null)
             {
@@ -42,7 +42,7 @@ namespace MTG_Cards.Repositories
 					List<CardDTO> cardsDTO = cards.Select(card => CardMapper.ToDTO(card)).ToList();
 					CardPageDTO cardPageDTO = new CardPageDTO(page + 1, (int)Math.Ceiling(numResults / 50.0), numResults, cardsDTO);
 
-					await Cache.SetCacheEntry(_distributedCache, key, cardPageDTO);
+					await CacheHelper.SetCacheEntry(_distributedCache, key, cardPageDTO);
 
 					return cardPageDTO;
 				}
@@ -117,7 +117,7 @@ namespace MTG_Cards.Repositories
         {
             string key = $"cards-{id}";
 
-			var cachedCard = await Cache.GetCacheEntry<CardDetailedDTO?>(_distributedCache, key);
+			var cachedCard = await CacheHelper.GetCacheEntry<CardDetailedDTO?>(_distributedCache, key);
 
             if (cachedCard == null)
             {
@@ -129,7 +129,7 @@ namespace MTG_Cards.Repositories
                 if (card == null) return null;
 
                 var cardDTO = CardMapper.ToDetailedDTO(card);
-				await Cache.SetCacheEntry(_distributedCache, key, cardDTO);
+				await CacheHelper.SetCacheEntry(_distributedCache, key, cardDTO);
 
                 return cardDTO;
 			}

@@ -1,15 +1,17 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
+using MTG_Cards.Interfaces;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 
 namespace MTG_Cards.Services
 {
-	public class Cache
+	public class CacheHelper : ICacheHelper
 	{
-		private static readonly CancellationToken _cancellationToken = default;
+		
 		private readonly IConnectionMultiplexer _redisConnection;
+		private static readonly CancellationToken _cancellationToken = default;
 
-		public Cache(IConnectionMultiplexer redisConnection)
+		public CacheHelper(IConnectionMultiplexer redisConnection)
 		{
 			_redisConnection = redisConnection;
 		}
