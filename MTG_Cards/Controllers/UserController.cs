@@ -45,6 +45,18 @@ namespace MTG_Cards.Controllers
 			return Ok(cardsOwnedPage);
 		}
 
+		[HttpGet("cards/{username}/details")]
+		public async Task<IActionResult> GetUserCollectionDetails(string username)
+		{
+			var userExists = _repository.UserExists(username);
+			if (!userExists)
+				return NotFound($"User: {username} not found");
+
+			(int totalCards, double totalValue) = await _repository.GetTotalCardsAndValue(username);
+			CollectDetailsDTO collectionDetailsDTO = new CollectDetailsDTO(totalCards, totalValue);
+			return Ok(collectionDetailsDTO);
+		}
+
 		[HttpGet("cards/conditions/{cardId}")]
 		[Authorize]
 		public async Task<IActionResult> GetUserCardsConditionsOwned(int cardId)
