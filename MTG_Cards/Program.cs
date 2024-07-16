@@ -6,6 +6,7 @@ using MTG_Cards.Data;
 using MTG_Cards.Interfaces;
 using MTG_Cards.Repositories;
 using MTG_Cards.Services;
+using StackExchange.Redis;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +47,14 @@ builder.Services.AddStackExchangeRedisCache(options =>
     var connection = builder.Configuration.GetConnectionString("Redis");
     options.Configuration = connection;
 });
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+	var configuration = builder.Configuration.GetConnectionString("Redis");
+	return ConnectionMultiplexer.Connect(configuration!);
+});
+
+builder.Services.AddTransient<Cache>();
 
 builder.Services.AddScoped<ICardRepository, CardRepository>();
 builder.Services.AddScoped<IEditionRepository, EditionRepository>();

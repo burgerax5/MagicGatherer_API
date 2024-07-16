@@ -22,11 +22,13 @@ namespace MTG_Cards.Repositories
 	{
 		private readonly DataContext _context;
 		private readonly IDistributedCache _distributedCache;
+		private readonly Cache _cacheHelper;
 
-		public UserRepository(DataContext context, IDistributedCache distributedCache)
+		public UserRepository(DataContext context, IDistributedCache distributedCache, Cache cacheHelper)
 		{
 			_context = context;
 			_distributedCache = distributedCache;
+			_cacheHelper = cacheHelper;
 		}
 
 		public bool UserExists(string username)
@@ -137,7 +139,7 @@ namespace MTG_Cards.Repositories
 
 		public string GenerateCacheKey(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter)
 		{
-			return $"user_{username}_cards_page_{page}_search_{search ?? "none"}_edition_{editionId?.ToString() ?? "none"}_sort_{sortBy ?? "none"}_foilFilter_{foilFilter ?? "none"}";
+			return $"user_{username.ToLower()}_cards_page_{page}_search_{search ?? "none"}_edition_{editionId?.ToString() ?? "none"}_sort_{sortBy ?? "none"}_foilFilter_{foilFilter ?? "none"}";
 		}
 
 		public async Task<(int totalCards, double totalValue)> GetTotalCardsAndValue(string username)
@@ -194,12 +196,7 @@ namespace MTG_Cards.Repositories
 
 		public async Task<bool> AddUserCard(User user, CreateCardOwnedDTO cardToAdd)
 		{
-			string key = $"user-{user.Username.ToLower()}";
-			CancellationToken cancellationToken = default;
-
-			string? cachedCards = await _distributedCache.GetStringAsync(
-				key,
-				cancellationToken);
+			string prefix = $"user_{user.Username.ToLower()}";
 
 			// Make sure card with provided id exists
 			var card = await _context.Cards
@@ -221,22 +218,14 @@ namespace MTG_Cards.Repositories
 			user.CardsOwned.Add(cardOwned);
 
 			// After adding the card, reset cache if it exists
-			if (!string.IsNullOrEmpty(cachedCards))
-			{
-				await _distributedCache.RemoveAsync(key, cancellationToken);
-			}
+			await _cacheHelper.ClearCacheEntries(prefix);
 
 			return await SaveAsync();
 		}
 
 		public async Task<bool> UpdateUserCard(User user, int id, UpdateCardOwnedDTO cardToUpdate)
 		{
-			string key = $"user-{user.Username.ToLower()}";
-			CancellationToken cancellationToken = default;
-
-			string? cachedCards = await _distributedCache.GetStringAsync(
-				key,
-				cancellationToken);
+			string prefix = $"user_{user.Username.ToLower()}";
 
 			// Make sure card with provided id exists
 			var cardOwned = _context.CardsOwned.Find(id);
@@ -245,22 +234,14 @@ namespace MTG_Cards.Repositories
 			cardOwned.Quantity = cardToUpdate.Quantity;
 
 			// After updating the card in user's collection, reset cache
-			if (!string.IsNullOrEmpty(cachedCards))
-			{
-				await _distributedCache.RemoveAsync(key, cancellationToken);
-			}
+			await _cacheHelper.ClearCacheEntries(prefix);
 
 			return await SaveAsync();
 		}
 
 		public async Task<bool> DeleteUserCard(User user, int id)
 		{
-			string key = $"user-{user.Username.ToLower()}";
-			CancellationToken cancellationToken = default;
-
-			string? cachedCards = await _distributedCache.GetStringAsync(
-				key,
-				cancellationToken);
+			string prefix = $"user_{user.Username.ToLower()}";
 
 			var cardOwned = _context.CardsOwned.Include(co => co.User).FirstOrDefault(co => co.Id == id);
 			if (cardOwned == null) return false;
@@ -269,10 +250,7 @@ namespace MTG_Cards.Repositories
 			_context.CardsOwned.Remove(cardOwned);
 
 			// After removing the card, reset cache if it exists
-			if (!string.IsNullOrEmpty(cachedCards))
-			{
-				await _distributedCache.RemoveAsync(key, cancellationToken);
-			}
+			await _cacheHelper.ClearCacheEntries(prefix);
 
 			return await SaveAsync();
 		}
