@@ -144,24 +144,35 @@ namespace MTG_Cards.Repositories
 
 		public async Task<(int totalCards, double totalValue)> GetTotalCardsAndValue(string username)
 		{
-			var cardQuantities = await _context.Users
-				.Where(u => u.Username == username)
-				.Include(u => u.CardsOwned)
-				.SelectMany(u => u.CardsOwned.Select(co => co.Quantity))
-				.ToListAsync();
+			try
+			{
+				var isValidUser = await _context.Users.AnyAsync(u => u.Username == username);
+				if (!isValidUser)
+					throw new Exception("User not found");
 
-			var cardValues = await _context.Users
-					.Where(u => u.Username == username)
-					.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Price))
-					.ToListAsync();
+					var cardQuantities = await _context.Users
+						.Where(u => u.Username == username)
+						.Include(u => u.CardsOwned)
+						.SelectMany(u => u.CardsOwned.Select(co => co.Quantity))
+						.ToListAsync();
 
-			int totalCards = cardQuantities.Sum();
-			double totalValue = 0;
+				var cardValues = await _context.Users
+						.Where(u => u.Username == username)
+						.SelectMany(u => u.CardsOwned.Select(co => co.CardCondition!.Price))
+						.ToListAsync();
 
-			for (int i = 0; i < cardQuantities.Count; i++)
-				totalValue += cardQuantities[i] * cardValues[i];
+				int totalCards = cardQuantities.Sum();
+				double totalValue = 0;
 
-			return (totalCards, totalValue);
+				for (int i = 0; i < cardQuantities.Count; i++)
+					totalValue += cardQuantities[i] * cardValues[i];
+
+				return (totalCards, totalValue);
+			} catch (Exception ex)
+			{
+				Console.Write("An error occurred while trying to get total cards and value: ", ex);
+				return (-1, -1);
+			}
 		}
 
 		public bool LoginUser(UserLoginDTO userDTO)

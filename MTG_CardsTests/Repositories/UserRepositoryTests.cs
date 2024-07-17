@@ -83,10 +83,10 @@ namespace MTG_CardsTests.Repositories
 			// Set up editions & cards
 			var cardConditions = new List<CardCondition>()
 			{
-				new CardCondition { Id = 1, CardId = 1, Condition = MTG_Cards.Models.Condition.NM, Quantity = 1 },
-				new CardCondition { Id = 2, CardId = 1, Condition = MTG_Cards.Models.Condition.EX, Quantity = 0 },
-				new CardCondition { Id = 3, CardId = 1, Condition = MTG_Cards.Models.Condition.VG, Quantity = 0 },
-				new CardCondition { Id = 4, CardId = 1, Condition = MTG_Cards.Models.Condition.G, Quantity = 0 },
+				new CardCondition { Id = 1, CardId = 1, Condition = MTG_Cards.Models.Condition.NM, Quantity = 1, Price = 0.4 },
+				new CardCondition { Id = 2, CardId = 1, Condition = MTG_Cards.Models.Condition.EX, Quantity = 0, Price = 0.3 },
+				new CardCondition { Id = 3, CardId = 1, Condition = MTG_Cards.Models.Condition.VG, Quantity = 0, Price = 0.2 },
+				new CardCondition { Id = 4, CardId = 1, Condition = MTG_Cards.Models.Condition.G, Quantity = 0, Price = 0.1 },
 			};
 			SetupMockDbSet(_mockCardConditionSet!, cardConditions.AsQueryable());
 
@@ -314,6 +314,52 @@ namespace MTG_CardsTests.Repositories
 			Assert.IsFalse(loginSuccess);
 		}
 
+		[TestMethod()]
+		public async Task GetTotalCardsAndValue_ValidUsername()
+		{
+			// Arrange
+			var username = "Bob";
+
+			// Act
+			(var totalCards, var totalValue) = await _userRepository!.GetTotalCardsAndValue(username);
+
+			// Assert
+			Assert.AreEqual(2, totalCards);
+			Assert.AreEqual(0.8, totalValue); // 2 cards each worth $0.4
+		}
+
+		[TestMethod()]
+		public async Task GetTotalCardsAndValue_InvalidUsername()
+		{
+			// Arrange
+			var username = "Sam";
+
+			// Act
+			(var totalCards, var totalValue) = await _userRepository!.GetTotalCardsAndValue(username);
+
+			// Assert
+			Assert.AreEqual(-1, totalCards);
+			Assert.AreEqual(-1, totalValue);
+		}
+
+		[TestMethod()]
+		public void GenerateCacheKey_ReturnsString()
+		{
+			// Arrange
+			var username = "Bob";
+			var page = 0; // 0 would be the first page
+			var search = "Air";
+			var editionId = 1;
+			var sortBy = "name_asc";
+			var foilFilter = "foils_only";
+
+			// Act
+			var cacheKey = _userRepository!.GenerateCacheKey(username, page, search, editionId, sortBy, foilFilter);
+
+			// Assert
+			var expectedKey = "user_bob_cards_page_0_search_Air_edition_1_sort_name_asc_foilFilter_foils_only";
+			Assert.AreEqual(expectedKey, cacheKey);
+		}
 
 		// Check for invalid username is done in controller
 		[TestMethod()]
@@ -326,7 +372,7 @@ namespace MTG_CardsTests.Repositories
 			Assert.AreEqual(1, cardsOwned.results); // I pre-populated Bob's cards owned
 			Assert.AreEqual("Card 1", cardsOwned.CardDTOs[0].Name);
 
-			var cacheKey = "user_bob_page_page_1_search_none_edition_none_sort_none_foilFilter_none";
+			var cacheKey = "user_bob_cards_page_0_search_none_edition_none_sort_none_foilFilter_none";
 			_mockCache?.Verify(c => c.GetAsync(cacheKey, default), Times.Once);
 		}
 
@@ -355,11 +401,11 @@ namespace MTG_CardsTests.Repositories
 
 			// Act
 			var isAddCardSuccess = await _userRepository!.AddUserCard(user, cardOwned);
-			var cardsOwned = await _userRepository.GetCardsOwned(user.Username, 0, null, null, null, null);
+			var cardsOwned = await _userRepository.GetTotalCardsAndValue(user.Username);
 
 			// Assert
 			Assert.IsTrue(isAddCardSuccess);
-			Assert.AreEqual(2, cardsOwned.results);
+			Assert.AreEqual(3, cardsOwned.totalCards);
 		}
 
 
@@ -406,7 +452,7 @@ namespace MTG_CardsTests.Repositories
 			// Assert
 			Assert.IsTrue(isFirstAddSuccess);
 			Assert.IsFalse(isSecondAddSuccess);
-			Assert.AreEqual(2, collectionDetails.totalCards);
+			Assert.AreEqual(3, collectionDetails.totalCards);
 		}
 
 
