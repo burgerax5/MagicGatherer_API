@@ -74,6 +74,10 @@ builder.Services.AddCors(options =>
                     .AllowCredentials();
         });
 });
+builder.Services.AddStackExchangeRedisCache(option =>
+{
+	option.Configuration = builder.Configuration["Redis"];
+});
 
 var app = builder.Build();
 

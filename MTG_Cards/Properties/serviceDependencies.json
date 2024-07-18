@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "redis1": {
+      "type": "redis",
+      "connectionId": "Redis",
+      "dynamicId": null
+    }
+  }
+}

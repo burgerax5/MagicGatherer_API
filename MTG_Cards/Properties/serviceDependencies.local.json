@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "redis1": {
+      "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ServiceLinker/locations/westus/connectors/Redis_A66E6599DF",
+      "secretStore": "LocalSecretsFile",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Cache/Redis/magicgatherer",
+      "type": "redis.azure",
+      "connectionId": "Redis",
+      "dynamicId": null
+    }
+  }
+}
