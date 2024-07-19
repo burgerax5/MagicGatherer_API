@@ -2,8 +2,8 @@
 This project is a website for tracking your Magic: The Gathering cards, using the prices from the CardKingdom website. The goal was to have a dedicated server for scraping the website periodically and updating the database which will be used by my API. The clients will interact with the frontend server to send requests over to the API.
 
 ## Links to other repositories:
-- Web Scraper: [https://github.com/burgerax5/MagicCollector_Frontend](https://github.com/burgerax5/MagicGatherer_Frontend)
-- Frontend: https://github.com/burgerax5/CardKingdomWebScraper
+- Frontend: [https://github.com/burgerax5/MagicCollector_Frontend](https://github.com/burgerax5/MagicGatherer_Frontend)
+- Web Scraper: https://github.com/burgerax5/CardKingdomWebScraper
 
 | *Browse Cards* |
 | :--: |
