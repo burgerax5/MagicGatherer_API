@@ -56,13 +56,35 @@ namespace MTG_Cards.Services
 
 		public async Task ClearCacheEntries(string prefix)
 		{
-			var server = _redisConnection.GetServer(_redisConnection.GetEndPoints().First());
-			var keys = server.Keys(pattern: $"{prefix}*").ToArray();
-			var db = _redisConnection.GetDatabase();
-
-			foreach (var key in keys)
+			try
 			{
-				await db.KeyDeleteAsync(key);
+				var server = _redisConnection.GetServer(_redisConnection.GetEndPoints().First());
+
+				// Ensure that the server is not null
+				if (server == null)
+				{
+					throw new InvalidOperationException("Could not retrieve the Redis server instance.");
+				}
+
+				var keys = server.Keys(pattern: $"{prefix}*").ToArray();
+				var db = _redisConnection.GetDatabase();
+
+				foreach (var key in keys)
+				{
+					await db.KeyDeleteAsync(key);
+				}
+			}
+			catch (RedisException redisEx)
+			{
+				// Handle Redis-specific exceptions
+				Console.WriteLine($"Redis exception: {redisEx.Message}");
+				throw;
+			}
+			catch (Exception ex)
+			{
+				// Handle general exceptions
+				Console.WriteLine($"An error occurred: {ex.Message}");
+				throw;
 			}
 		}
 	}

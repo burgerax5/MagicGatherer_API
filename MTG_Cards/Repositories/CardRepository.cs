@@ -35,6 +35,7 @@ namespace MTG_Cards.Repositories
 					var numResults = await query.CountAsync();
 
 					List<Card> cards = await query
+						.AsNoTracking()
 						.Skip(page * 50)
 						.Take(50)
 						.ToListAsync();
@@ -63,11 +64,11 @@ namespace MTG_Cards.Repositories
 				.AsNoTracking()
 				.Include(c => c.Edition);
 
-            if (!string.IsNullOrEmpty(search))
-                query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
+			if (!string.IsNullOrEmpty(search))
+				query = query.Where(c => c.Name.ToLower().Contains(search.ToLower()));
 
-            if (editionId.HasValue)
-                query = query.Where(c => c.EditionId == editionId.Value);
+			if (editionId.HasValue)
+				query = query.Where(c => c.EditionId == editionId.Value);
 
 			switch (foilFilter)
 			{

@@ -19,9 +19,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-DotNetEnv.Env.Load();
-var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
-var key = Encoding.ASCII.GetBytes(secretKey ?? "not_so_secret_key");
+var key = Encoding.ASCII.GetBytes("wUAlIcbfF97TuJe78ocQr55JF9Tf7BaoP9aHYU9qZg8");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -67,8 +65,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-            builder
-                    .WithOrigins("https://magicgatherer.netlify.app")
+			var origin = "https://magicgatherer.netlify.app";
+			//var origin = "http://localhost:5173";
+
+			builder
+                    .WithOrigins(origin)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials();

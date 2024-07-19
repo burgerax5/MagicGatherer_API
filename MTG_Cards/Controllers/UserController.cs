@@ -148,11 +148,7 @@ namespace MTG_Cards.Controllers
 		{
 			try
 			{
-				DotNetEnv.Env.Load();
-				var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
-				if (secretKey == null) throw new Exception("Missing JWT_SECRET_KEY");
-
-				var keyEncoded = Encoding.ASCII.GetBytes(secretKey);
+				var keyEncoded = Encoding.ASCII.GetBytes("wUAlIcbfF97TuJe78ocQr55JF9Tf7BaoP9aHYU9qZg8");
 				var tokenDescriptor = new SecurityTokenDescriptor
 				{
 					Subject = new ClaimsIdentity(new[]
