@@ -84,12 +84,6 @@ namespace MTG_Cards.Repositories
 
 			switch (sortBy)
 			{
-				case "name_asc":
-					query = query.OrderBy(c => c.Name);
-					break;
-				case "name_desc":
-					query = query.OrderByDescending(c => c.Name);
-					break;
 				case "price_asc":
 					query = query.OrderBy(c => c.NMPrice);
 					break;
