@@ -44,6 +44,9 @@ Next, you will need to setup the Redis server for caching. IMO the easiest way t
 docker pull redis
 docker run -d --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest
 ```
+Lastly, you will need to allow the origin of your frontend. To do this, go to `Program.cs` and go down to line 68/69 and change the value of `origin` to that of your frontend, after it is run. This is necessary if you want to test the frontend with the API otherwise it'll get blocked by CORS policy.
+![image](https://github.com/user-attachments/assets/75db2044-4812-41b5-904a-691ce3f8d97a)
+
 Assuming all the packages are installed and you are connected to the database, and also have the Redis server running then you should be ready to run the program using IIS (My docker Container doesn't work)
 
 **DISCLAIMER: You probably will just see empty data since all the data is from the web scraper** https://github.com/burgerax5/CardKingdomWebScraper
