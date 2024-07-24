@@ -3,7 +3,7 @@ This project is a website for tracking your Magic: The Gathering cards, using th
 
 Link to website: https://magicgatherer.netlify.app/
 
-**DISCLAIMER:** The API is on the F1 pricing plan which only has 60 minutes of ACU/vCPU per day so it's probably not always working.
+**DISCLAIMER:** The database goes to sleep after an hour of inactivity so it might take a while for it to resume.
 
 ## Links to other repositories:
 - Frontend: [https://github.com/burgerax5/MagicCollector_Frontend](https://github.com/burgerax5/MagicGatherer_Frontend)
