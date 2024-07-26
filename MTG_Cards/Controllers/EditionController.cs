@@ -26,27 +26,7 @@ namespace MTG_Cards.Controllers
         [HttpGet("grouped")]
         public async Task<IActionResult> GetEditionNamesGrouped()
         {
-            var editionNames = await _repository.GetEditionNames();
-            var groupedEditions = new List<GroupedEditionNames>();
-            var groups = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            foreach(char group in groups)
-            {
-                groupedEditions.Add(new GroupedEditionNames { 
-                    header = group,
-                    editions = new List<EditionNameDTO>()
-                });
-            }
-
-            foreach(var edition in editionNames)
-            {
-                var firstLetter = edition.Name[0];
-                var groupsIndex = groups.IndexOf(firstLetter);
-				var group = groupsIndex == -1 ? 0 : groupsIndex;
-
-                groupedEditions[group].editions.Add(edition);
-            }
-
-            return Ok(groupedEditions);
+            return Ok(await _repository.GetEditionNamesGrouped());
         }
 
         [HttpGet("dropdown")]

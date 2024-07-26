@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
 builder.Services.AddDbContext<DataContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -44,6 +45,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     var connection = builder.Configuration.GetConnectionString("Redis");
     options.Configuration = connection;
+	options.InstanceName = "Redis";
 });
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -74,10 +76,6 @@ builder.Services.AddCors(options =>
                     .AllowAnyHeader()
                     .AllowCredentials();
         });
-});
-builder.Services.AddStackExchangeRedisCache(option =>
-{
-	option.Configuration = builder.Configuration["Redis"];
 });
 
 var app = builder.Build();

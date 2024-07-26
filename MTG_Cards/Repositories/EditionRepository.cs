@@ -59,6 +59,42 @@ namespace MTG_Cards.Repositories
 
 		}
 
+        public async Task<List<GroupedEditionNames>> GetEditionNamesGrouped()
+        {
+            string key = "grouped_editions";
+            var cachedGroupedEditions = await CacheHelper.GetCacheEntry<List<GroupedEditionNames>?>(_distributedCache, key);
+
+            if (cachedGroupedEditions == null)
+            {
+				var editionNames = await GetEditionNames();
+				var groupedEditions = new List<GroupedEditionNames>();
+				var groups = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+				foreach (char group in groups)
+				{
+					groupedEditions.Add(new GroupedEditionNames
+					{
+						header = group,
+						editions = new List<EditionNameDTO>()
+					});
+				}
+
+				foreach (var edition in editionNames)
+				{
+					var firstLetter = edition.Name[0];
+					var groupsIndex = groups.IndexOf(firstLetter);
+					var group = groupsIndex == -1 ? 0 : groupsIndex;
+
+					groupedEditions[group].editions.Add(edition);
+				}
+
+				await CacheHelper.SetCacheEntry(_distributedCache, key, groupedEditions);
+
+				return groupedEditions;
+			}
+
+            return cachedGroupedEditions;
+		}
+
         public async Task<EditionDTO?> GetEditionById(int id)
         {
             string key = $"edition-{id}";
