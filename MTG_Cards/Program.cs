@@ -45,7 +45,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     var connection = builder.Configuration.GetConnectionString("Redis");
     options.Configuration = connection;
-	options.InstanceName = "Redis";
+	//options.InstanceName = "Redis";
 });
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -67,8 +67,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-			var origin = "https://magicgatherer.netlify.app";
-			//var origin = "http://localhost:5173";
+			//var origin = "https://magicgatherer.netlify.app";
+			var origin = "http://localhost:5173";
 
 			builder
                     .WithOrigins(origin)
