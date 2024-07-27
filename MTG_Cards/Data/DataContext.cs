@@ -15,6 +15,7 @@ namespace MTG_Cards.Data
         public virtual DbSet<CardCondition> CardConditions { get; set; }
         public virtual DbSet<CardOwned> CardsOwned { get; set; }
         public virtual DbSet<User> Users { get; set; }
+		public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
