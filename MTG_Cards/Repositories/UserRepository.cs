@@ -4,16 +4,7 @@ using MTG_Cards.DTOs;
 using MTG_Cards.Services.Mappers;
 using MTG_Cards.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using System.Security.Claims;
-using Microsoft.Net.Http.Headers;
-using Azure;
 using Microsoft.Extensions.Caching.Distributed;
-using Newtonsoft.Json;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Threading;
 using MTG_Cards.Services;
 
 namespace MTG_Cards.Repositories
@@ -259,10 +250,10 @@ namespace MTG_Cards.Repositories
 			return await SaveAsync();
 		}
 
-		public async Task CreatePasswordResetToken(string email)
+		public async Task<string?> CreatePasswordResetToken(string email)
 		{
 			var isValidEmail = await _context.Users.Where(u => u.Email == email).AnyAsync();
-			if (!isValidEmail) return;
+			if (!isValidEmail) return null;
 
 			var token = ResetTokenHelper.GenerateResetToken();
 			var resetToken = new PasswordResetToken 
@@ -276,13 +267,7 @@ namespace MTG_Cards.Repositories
 			await _context.PasswordResetTokens.AddAsync(resetToken);
 			await _context.SaveChangesAsync();
 
-			// Send email with reset token
-			await SendPasswordResetEmail(email, token);
-		}
-
-		public async Task SendPasswordResetEmail(string email, string resetToken)
-		{
-			var resetLink = $"https://magicgatherer.netlify.app/reset-password?token={resetToken}";
+			return token;
 		}
 
 		public bool Save()

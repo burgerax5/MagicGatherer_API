@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MTG_Cards.DTOs;
@@ -16,9 +17,11 @@ namespace MTG_Cards.Controllers
 	public class UserController : ControllerBase
 	{
 		private readonly IUserRepository _repository;
-		public UserController(IUserRepository repository)
+		private readonly MailService _mailService;
+		public UserController(IUserRepository repository, MailService mailService)
 		{
 			_repository = repository;
+			_mailService = mailService;
 		}
 
 		[HttpGet("cards/{username}")]
@@ -83,6 +86,20 @@ namespace MTG_Cards.Controllers
 			var isSuccess = await _repository.AddUserCard(user, cardToAdd);
 			if (isSuccess) return Ok("Successfully added cards to collection");
 			return BadRequest("Something went wrong while trying to add card to collection");
+		}
+
+		[HttpPost("forgot-password")]
+		public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+		{
+			var email = request.Email;
+			var resetToken = await _repository.CreatePasswordResetToken(email);
+
+			if (resetToken == null) return BadRequest("Invalid reset token");
+			var resetPasswordLink = $"https://magicgatherer.netlify.app/reset-password?token={resetToken}";
+
+			// Send email
+			await _mailService.SendPasswordResetEmail(email, resetPasswordLink);
+			return Ok("Password reset email sent");
 		}
 
 		[HttpPut("cards/{id}")]

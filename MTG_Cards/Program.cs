@@ -45,8 +45,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     var connection = builder.Configuration.GetConnectionString("Redis");
     options.Configuration = connection;
-	//options.InstanceName = "Redis";
 });
+
+
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
@@ -59,6 +60,7 @@ builder.Services.AddTransient<ICacheHelper, CacheHelper>();
 builder.Services.AddScoped<ICardRepository, CardRepository>();
 builder.Services.AddScoped<IEditionRepository, EditionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddTransient<MailService>();
 
 builder.Services.AddHttpClient();
 
