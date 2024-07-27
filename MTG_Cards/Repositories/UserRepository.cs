@@ -259,6 +259,32 @@ namespace MTG_Cards.Repositories
 			return await SaveAsync();
 		}
 
+		public async Task CreatePasswordResetToken(string email)
+		{
+			var isValidEmail = await _context.Users.Where(u => u.Email == email).AnyAsync();
+			if (!isValidEmail) return;
+
+			var token = ResetTokenHelper.GenerateResetToken();
+			var resetToken = new PasswordResetToken 
+			{ 
+				Token = token,
+				Email = email,
+				Expiration = DateTime.UtcNow.AddHours(1)
+			};
+
+			// Save token to DB
+			await _context.PasswordResetTokens.AddAsync(resetToken);
+			await _context.SaveChangesAsync();
+
+			// Send email with reset token
+			await SendPasswordResetEmail(email, token);
+		}
+
+		public async Task SendPasswordResetEmail(string email, string resetToken)
+		{
+			var resetLink = $"https://magicgatherer.netlify.app/reset-password?token={resetToken}";
+		}
+
 		public bool Save()
 		{
 			var saved = _context.SaveChanges();

@@ -16,6 +16,8 @@ namespace MTG_Cards.Interfaces
 		Task<bool> AddUserCard(User user, CreateCardOwnedDTO card);
 		Task<bool> UpdateUserCard(User user, int id, UpdateCardOwnedDTO updatedCardDetails);
 		Task<bool> DeleteUserCard(User user, int id);
+		Task CreatePasswordResetToken(string email);
+		Task SendPasswordResetEmail(string email, string resetToken);
 		bool Save();
 		Task<bool> SaveAsync();
 	}
