@@ -173,7 +173,7 @@ namespace MTG_Cards.Repositories
 			User? user = _context.Users.FirstOrDefault(u => u.Username == userDTO.Username);
 			if (user == null) return false;
 
-			string hashedPassword = HashPassword(userDTO.Password, user.Salt);
+			string hashedPassword = PasswordHashHelper.HashPassword(userDTO.Password, user.Salt);
 			if (hashedPassword != user.Password) return false;
 
 			return true;
@@ -181,7 +181,7 @@ namespace MTG_Cards.Repositories
 
 		public bool RegisterUser(UserLoginDTO userDTO)
 		{
-			var (hashedPassword, salt) = GenerateHashedPasswordAndSalt(userDTO.Password);
+			var (hashedPassword, salt) = PasswordHashHelper.GenerateHashedPasswordAndSalt(userDTO.Password);
 			userDTO.Password = hashedPassword;
 			_context.Users.Add(UserMapper.ToModel(userDTO, salt));
 			return Save();
@@ -269,32 +269,6 @@ namespace MTG_Cards.Repositories
 		{
 			var saved = await _context.SaveChangesAsync();
 			return saved > 0;
-		}
-
-		private (string hashedPassword, byte[] salt) GenerateHashedPasswordAndSalt(string password)
-		{
-			byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
-			string hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-					password: password,
-					salt: salt,
-					prf: KeyDerivationPrf.HMACSHA256,
-					iterationCount: 10000,
-					numBytesRequested: 256 / 8
-					));
-			return (hashedPassword, salt);
-		}
-
-		private string HashPassword(string password, string salt)
-		{
-			byte[] saltBytes = Convert.FromBase64String(salt);
-			string hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-					password: password,
-					salt: saltBytes,
-					prf: KeyDerivationPrf.HMACSHA256,
-					iterationCount: 10000,
-					numBytesRequested: 256 / 8
-					));
-			return hashedPassword;
 		}
 	}
 }
