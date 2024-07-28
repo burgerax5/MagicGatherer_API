@@ -9,6 +9,7 @@ namespace MTG_Cards.Interfaces
 		bool UserEmailExists(string email);
 		User? GetUserById(int id);
 		User? GetUserByUsername(string username);
+		Task<User?> GetUserByEmail(string email);
 		Task<CardPageDTO> GetCardsOwned(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter);
 		Task<(int totalCards, double totalValue)> GetTotalCardsAndValue(string username);
 		bool LoginUser(UserLoginDTO user);

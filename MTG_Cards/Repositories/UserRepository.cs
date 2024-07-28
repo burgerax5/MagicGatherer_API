@@ -42,6 +42,11 @@ namespace MTG_Cards.Repositories
 			return _context.Users.FirstOrDefault(u => u.Username == username);
 		}
 
+		public async Task<User?> GetUserByEmail(string email)
+		{
+			return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+		}
+
 
 		public async Task<CardPageDTO> GetCardsOwned(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter)
 		{

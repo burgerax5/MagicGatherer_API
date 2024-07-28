@@ -97,8 +97,11 @@ namespace MTG_Cards.Controllers
 			if (resetToken == null) return BadRequest("Invalid reset token");
 			var resetPasswordLink = $"https://magicgatherer.netlify.app/reset-password?token={resetToken}";
 
+			var user = await _repository.GetUserByEmail(email);
+			if (user == null) return NotFound(new { message = "No user found with the email: " + email });
+
 			// Send email
-			await _mailService.SendPasswordResetEmail(email, resetPasswordLink);
+			await _mailService.SendPasswordResetEmail(user.Username, email, resetPasswordLink);
 			return Ok("Password reset email sent");
 		}
 
