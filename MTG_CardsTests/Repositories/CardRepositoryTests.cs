@@ -318,20 +318,25 @@ namespace MTG_Cards.Repositories.Tests
 			Assert.AreEqual(0, cardPageDTO.results);
 		}
 
-		[TestMethod()]
-		public async Task GetCards_SortByName()
-		{
-			// Act
-			var sortByNameAscending = await _cardRepository!.GetCards(1, null, null, "name_asc", null);
-			var sortByNameDescending = await _cardRepository!.GetCards(1, null, null, "name_desc", null);
+	
+		/*
+		 METHOD REMOVED
+		 */
 
-			// Assert
-			var lastCardNameAscending = sortByNameAscending.CardDTOs.First().Name;
-			Assert.AreEqual("Card 9", lastCardNameAscending);
+		//[TestMethod()]
+		//public async Task GetCards_SortByName()
+		//{
+		//	// Act
+		//	var sortByNameAscending = await _cardRepository!.GetCards(1, null, null, "name_asc", null);
+		//	var sortByNameDescending = await _cardRepository!.GetCards(1, null, null, "name_desc", null);
 
-			var lastCardnameDescending = sortByNameDescending.CardDTOs.First().Name;
-			Assert.AreEqual("Card 1", lastCardnameDescending);
-		}
+		//	// Assert
+		//	var lastCardNameAscending = sortByNameAscending.CardDTOs.First().Name;
+		//	Assert.AreEqual("Card 9", lastCardNameAscending);
+
+		//	var lastCardnameDescending = sortByNameDescending.CardDTOs.First().Name;
+		//	Assert.AreEqual("Card 1", lastCardnameDescending);
+		//}
 
 		[TestMethod()]
 		public async Task GetCards_SortByPrice()

@@ -7,7 +7,7 @@ using MTG_Cards.Interfaces;
 using MTG_Cards.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
+using System.Net;
 using System.Text;
 
 namespace MTG_Cards.Controllers
@@ -164,7 +164,7 @@ namespace MTG_Cards.Controllers
 		{
 			if (_repository.UserExists(userDTO.Username))
 				return BadRequest(new { message = "Username is already taken" });
-			else if (_repository.UserEmailExists(userDTO.Email))
+			else if (_repository.UserEmailExists(userDTO.Email!))
 				return BadRequest(new { message = "Email is already taken" });
 
 			bool successfulRegister = _repository.RegisterUser(userDTO);

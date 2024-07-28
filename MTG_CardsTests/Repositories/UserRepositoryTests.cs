@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using MTG_Cards.Controllers;
 using MTG_Cards.Data;
@@ -33,6 +34,8 @@ namespace MTG_CardsTests.Repositories
 		private Mock<HttpResponse>? _mockHttpResponse;
 		private Mock<ICacheHelper>? _mockCacheHelper;
 		private Mock<IConnectionMultiplexer>? _mockConnectionMultiplexer;
+		private Mock<MailService>? _mockMailService;
+		private Mock<IConfiguration>? _mockConfiguration;
 
 		private void MockHttp()
 		{
@@ -140,6 +143,8 @@ namespace MTG_CardsTests.Repositories
 			var mockServer = new Mock<IServer>();
 			var mockDatabase = new Mock<IDatabase>();
 			_mockConnectionMultiplexer = new Mock<IConnectionMultiplexer>();
+			_mockConfiguration = new Mock<IConfiguration>();
+			_mockMailService = new Mock<MailService>(_mockConfiguration.Object);
 
 			_mockConnectionMultiplexer.Setup(m => m.GetServer(It.IsAny<string>(), It.IsAny<object>()))
 			.Returns(mockServer.Object);
@@ -150,7 +155,7 @@ namespace MTG_CardsTests.Repositories
 			_userRepository = new UserRepository(_context!, _mockCache.Object, _mockCacheHelper.Object);
 
 			// Controller instance
-			_userController = new UserController(_userRepository)
+			_userController = new UserController(_userRepository, _mockMailService.Object)
 			{
 				ControllerContext = new ControllerContext
 				{
@@ -245,6 +250,7 @@ namespace MTG_CardsTests.Repositories
 			// Arrange
 			UserLoginDTO userLoginDTO = new UserLoginDTO
 			{
+				Email = "sam@gmail.com",
 				Username = "Sam",
 				Password = "Sam's Password"
 			};
