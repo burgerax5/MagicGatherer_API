@@ -102,6 +102,17 @@ namespace MTG_Cards.Controllers
 			return Ok("Password reset email sent");
 		}
 
+		[HttpPost("reset-password")]
+		public async Task<IActionResult> ResetPassword([FromQuery] string token, [FromBody] ResetPasswordDTO resetPassword)
+		{
+			var isValidToken = await _repository.VerifyPasswordResetToken(token);
+			if (!isValidToken) return BadRequest(new { message = "Invalid password reset token" });
+
+			var successfulReset = await _repository.ResetPassword(token, resetPassword.password);
+			if (!successfulReset) return BadRequest(new { message = "An error occurred while resetting password" });
+			return Ok(new { message = "Successfully reset password" });
+		}
+
 		[HttpPut("cards/{id}")]
 		[Authorize]
 		public async Task<IActionResult> UpdateUserCard(int id, [FromBody] UpdateCardOwnedDTO updatedCardDetails)
@@ -138,11 +149,11 @@ namespace MTG_Cards.Controllers
 		public IActionResult LoginUser(UserLoginDTO userLoginDTO)
 		{
 			if (!_repository.UserExists(userLoginDTO.Username))
-				return NotFound("User not found");
+				return NotFound(new { message = "Invalid user credentials" });
 
 			bool successfulLogin = _repository.LoginUser(userLoginDTO);
 			if (!successfulLogin)
-				return BadRequest("Invalid user credentials");
+				return BadRequest(new { message = "Invalid user credentials" });
 
 			var token = GenerateJwtToken(userLoginDTO.Username);
 			return Ok(new { token });
@@ -152,13 +163,13 @@ namespace MTG_Cards.Controllers
 		public IActionResult RegisterUser([FromBody] UserLoginDTO userDTO)
 		{
 			if (_repository.UserExists(userDTO.Username))
-				return BadRequest("Username is already taken");
+				return BadRequest(new { message = "Username is already taken" });
 			else if (_repository.UserEmailExists(userDTO.Email))
-				return BadRequest("Email is already taken");
+				return BadRequest(new { message = "Email is already taken" });
 
 			bool successfulRegister = _repository.RegisterUser(userDTO);
 			if (!successfulRegister)
-				return BadRequest("Something went wrong while registering user");
+				return BadRequest(new { message = "Something went wrong while registering user" });
 
 			return Ok("Successfully registered: " + userDTO.Username);
 		}

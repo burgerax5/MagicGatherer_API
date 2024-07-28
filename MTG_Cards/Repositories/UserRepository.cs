@@ -275,6 +275,31 @@ namespace MTG_Cards.Repositories
 			return token;
 		}
 
+		public async Task<bool> VerifyPasswordResetToken(string token)
+		{
+			return await _context.PasswordResetTokens.Where(prt => prt.Token == token).AnyAsync();
+		}
+
+		public async Task<bool> ResetPassword(string token, string password)
+		{
+			var resetToken = await _context.PasswordResetTokens.FirstOrDefaultAsync(prt => prt.Token == token);
+
+			if (resetToken == null || resetToken.Expiration < DateTime.UtcNow)
+				return false;
+
+			var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == resetToken.Email);
+			if (user == null) return false;
+
+			(var hashedPassword, var salt) = PasswordHashHelper.GenerateHashedPasswordAndSalt(password);
+			user.Password = hashedPassword;
+			user.Salt = Convert.ToBase64String(salt);
+
+			// Delete password reset token from DB
+			_context.Remove(resetToken);
+
+			return await SaveAsync();
+		}
+
 		public bool Save()
 		{
 			var saved = _context.SaveChanges();
