@@ -20,7 +20,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-var key = Encoding.ASCII.GetBytes("wUAlIcbfF97TuJe78ocQr55JF9Tf7BaoP9aHYU9qZg8");
+var key = Encoding.ASCII.GetBytes(builder.Configuration["JWTKey"]!);
 
 builder.Services.AddAuthentication(options =>
 {
