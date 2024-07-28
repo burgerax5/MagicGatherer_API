@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+
 builder.Configuration.AddAzureKeyVault(new Uri("https://mtgcardsvault.vault.azure.net/"), new DefaultAzureCredential());
 
 builder.Services.AddDbContext<DataContext>(options =>
@@ -72,11 +73,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-			//var origin = "https://magicgatherer.netlify.app";
-			var origin = "http://localhost:5173";
+			string[] origins = ["https://magicgatherer.netlify.app"];
+			//origins.Append("http://localhost:5173");
 
 			builder
-                    .WithOrigins(origin)
+                    .WithOrigins(origins)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials();

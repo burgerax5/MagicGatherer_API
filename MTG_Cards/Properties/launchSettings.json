@@ -5,7 +5,9 @@
       "launchBrowser": true,
       "launchUrl": "api/cards",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "VaultUri": "https://mtgcardsvault.vault.azure.net/",
+        "AZURE_USERNAME": "ttan752@UoA.auckland.ac.nz"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5015"
@@ -15,7 +17,9 @@
       "launchBrowser": true,
       "launchUrl": "api/cards",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "VaultUri": "https://mtgcardsvault.vault.azure.net/",
+        "AZURE_USERNAME": "ttan752@UoA.auckland.ac.nz"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7136;http://localhost:5015"
@@ -25,7 +29,9 @@
       "launchBrowser": true,
       "launchUrl": "api/cards",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "VaultUri": "https://mtgcardsvault.vault.azure.net/",
+        "AZURE_USERNAME": "ttan752@UoA.auckland.ac.nz"
       }
     },
     "Container (Dockerfile)": {
@@ -34,7 +40,9 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/api/cards?page=1",
       "environmentVariables": {
         "ASPNETCORE_HTTPS_PORTS": "8081",
-        "ASPNETCORE_HTTP_PORTS": "8080"
+        "ASPNETCORE_HTTP_PORTS": "8080",
+        "VaultUri": "https://mtgcardsvault.vault.azure.net/",
+        "AZURE_USERNAME": "ttan752@UoA.auckland.ac.nz"
       },
       "publishAllPorts": true,
       "useSSL": true
