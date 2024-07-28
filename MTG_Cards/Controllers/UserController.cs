@@ -153,6 +153,8 @@ namespace MTG_Cards.Controllers
 		{
 			if (_repository.UserExists(userDTO.Username))
 				return BadRequest("Username is already taken");
+			else if (_repository.UserEmailExists(userDTO.Email))
+				return BadRequest("Email is already taken");
 
 			bool successfulRegister = _repository.RegisterUser(userDTO);
 			if (!successfulRegister)

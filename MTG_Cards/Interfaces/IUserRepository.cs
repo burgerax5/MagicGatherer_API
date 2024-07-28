@@ -6,6 +6,7 @@ namespace MTG_Cards.Interfaces
 	public interface IUserRepository
 	{
 		bool UserExists(string username);
+		bool UserEmailExists(string email);
 		User? GetUserById(int id);
 		User? GetUserByUsername(string username);
 		Task<CardPageDTO> GetCardsOwned(string username, int page, string? search, int? editionId, string? sortBy, string? foilFilter);

@@ -9,6 +9,7 @@ namespace MTG_Cards.Services.Mappers
 		{
 			return new User
 			{
+				Email = userDTO.Email,
 				Username = userDTO.Username,
 				Password = userDTO.Password,
 				CardsOwned = new List<CardOwned>(),
