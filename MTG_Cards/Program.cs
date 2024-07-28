@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using MTG_Cards.Data;
 using MTG_Cards.Interfaces;
@@ -8,6 +7,8 @@ using MTG_Cards.Repositories;
 using MTG_Cards.Services;
 using StackExchange.Redis;
 using System.Text;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,9 +16,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Configuration.AddAzureKeyVault(new Uri("https://mtgcardsvault.vault.azure.net/"), new DefaultAzureCredential());
+
 builder.Services.AddDbContext<DataContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+	options.UseSqlServer(builder.Configuration["DbConnection"]);
 });
 
 var key = Encoding.ASCII.GetBytes(builder.Configuration["JWTKey"]!);
@@ -43,7 +46,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    var connection = builder.Configuration.GetConnectionString("Redis");
+    var connection = builder.Configuration["Redis"];
     options.Configuration = connection;
 });
 
@@ -51,7 +54,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-	var configuration = builder.Configuration.GetConnectionString("Redis");
+	var configuration = builder.Configuration["Redis"];
 	return ConnectionMultiplexer.Connect(configuration!);
 });
 

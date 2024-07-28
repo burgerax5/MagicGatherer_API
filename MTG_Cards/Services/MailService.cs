@@ -32,7 +32,6 @@ namespace MTG_Cards.Services
                         font-family: ""Inter"", sans-serif;
                         background-color: #373737;
                         color: white;
-                        margin-left: 2rem;
                         height: 400px;
                     }
 
