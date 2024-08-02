@@ -51,11 +51,6 @@ Update-Database
 Secondly, in `Program.cs` _**comment out or delete**_ the code below because you will be using the values in `appsettings.json` and not the Azure Key Vault.
 ```
 builder.Configuration.AddAzureKeyVault(new Uri("https://mtgcardsvault.vault.azure.net/"), new DefaultAzureCredential());
-
-builder.Services.AddDbContext<DataContext>(options =>
-{
-	options.UseSqlServer(builder.Configuration["DbConnection"]);
-});
 ```
 
 Next, you will need to setup the Redis server for caching. IMO the easiest way to do this is using a Redis container in Docker but there are other ways.
@@ -67,9 +62,9 @@ Lastly, you will need to allow the origin of your frontend. To do this, go to `P
 
 ![image](https://github.com/user-attachments/assets/75db2044-4812-41b5-904a-691ce3f8d97a)
 
-Assuming all the packages are installed and you are connected to the database, and also have the Redis server running then you should be ready to run the program using IIS (My docker Container doesn't work)
+Assuming all the packages are installed and you are connected to the database, and **also have the Redis server running** then you should be ready to run the program.
 
-**DISCLAIMER: You probably will just see no data since all the data is from the web scraper** https://github.com/burgerax5/CardKingdomWebScraper
+**DISCLAIMER: You will probably see no data since all the data is scraped** https://github.com/burgerax5/CardKingdomWebScraper
 
 I don't have Swagger setup for displaying the API endpoints but you can refer to my controllers to test them out, or alternatively interact with the API through the frontend.
 
