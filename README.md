@@ -1,7 +1,7 @@
 # MagicGatherer
 This project is a website for tracking your Magic: The Gathering cards, using the prices from the CardKingdom website. The goal was to have a dedicated server for scraping the website periodically and updating the database which will be used by my API. The clients will interact with the frontend server to send requests over to the API.
 
-Link to website: https://magicgatherer.netlify.app/
+Link to website: https://magicgatherer.netlify.app/ (backend server has been shut down)
 
 **DISCLAIMER:** The database goes to sleep after an hour of inactivity so it might take a while for it to resume.
 
